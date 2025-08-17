@@ -9,7 +9,7 @@ class CreateAdminLogsTable extends Migration
     public function up()
     {
         Schema::create('admin_logs', function (Blueprint $table) {
-            $table->id('log_id');
+            $table->id('id');
             $table->foreignId('admin_id')->constrained('admins')->onDelete('cascade');
             $table->string('action', 255);
             $table->timestamp('created_at')->useCurrent();
