@@ -3,6 +3,8 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\AdminIsLoggedInMiddleware;
+use App\Http\Middleware\AdminIsLoggedOutMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,7 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Make sure to import the middleware classes at the top of the file
+
+        $middleware->append(AdminIsLoggedInMiddleware::class);
+        $middleware->append(AdminIsLoggedOutMiddleware::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
