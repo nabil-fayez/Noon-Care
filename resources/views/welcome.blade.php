@@ -55,7 +55,7 @@
             Your trusted platform for booking clinics and doctor appointments.<br>
             Find the right healthcare professional and schedule your visit with ease.
         </p>
-        <a href="{{ route('login') }}" class="btn">Get Started</a>
+        <a class="btn">Get Started</a>
     </div>
 </body>
 </html>

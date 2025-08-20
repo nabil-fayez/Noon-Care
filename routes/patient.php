@@ -3,4 +3,4 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/login/patient', function () {
     return view('auth.patient.login');
-})->name('login');
+})->name('patient.login');

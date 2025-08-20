@@ -1,7 +1,6 @@
 <?php
 use Illuminate\Support\Facades\Route;
 
-Route::domain('admin.nooncare.test')->group(function () {
     Route::get('/', function () {
         dd('admin./');
         // return redirect()->route('admin.dashboard');
@@ -22,4 +21,4 @@ Route::domain('admin.nooncare.test')->group(function () {
         // return view('auth.admin.login');
         })->name('admin.login');
     });
-});
+
