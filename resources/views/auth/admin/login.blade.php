@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('content')
 <div class="container">
     <h2>تسجيل الدخول</h2>
-    <form method="POST" action="{{ route('login') }}">
+    <form method="POST" action="{{ route('admin.login') }}">
         @csrf
 
         <div class="form-group">
@@ -26,7 +26,7 @@
         <button type="submit" class="btn btn-primary">تسجيل الدخول</button>
 
         <!-- <div class="mt-3">
-            <a href="{{ route('password.request') }}">نسيت كلمة المرور؟</a>
+            {{-- <a href="{{ route('password.request') }}">نسيت كلمة المرور؟</a> --}}
         </div> -->
     </form>
 </div>
