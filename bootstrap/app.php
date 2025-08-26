@@ -8,16 +8,11 @@ use App\Http\Middleware\AdminIsLoggedOutMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        commands: __DIR__.'/../routes/console.php',
+        web: __DIR__ . '/../routes/web.php',
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        // Make sure to import the middleware classes at the top of the file
-
-        $middleware->append(AdminIsLoggedInMiddleware::class);
-        $middleware->append(AdminIsLoggedOutMiddleware::class);
-    })
+    ->withMiddleware(function (Middleware $middleware): void {})
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

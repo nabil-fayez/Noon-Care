@@ -3,11 +3,42 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
+    public function login(Request $request)
+    {
+        if ($request->isMethod('post')) {
+            $credentials = [
+                'email' => $request->input('email'),
+                'password' => $request->input('password')
+            ];
+            if (auth()->guard('admin')->attempt($credentials)) {
+                return redirect()->route('admin.dashboard');
+            } else {
+                return back()->withErrors(['email' => 'Invalid credentials'])->withInput();
+            }
+        }
+        return view('auth.admin.login');
+    }
+    public function logout(Request $request)
+    {
+        if ($request->isMethod('post')) {
+            auth()->guard('admin')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('admin.login');
+        }
+        return view('auth.admin.logout');
+    }
 
+    public function dashboard()
+    {
+        return view('admin.dashboard');
+    }
     public function index()
     {
         $admins = Admin::all();

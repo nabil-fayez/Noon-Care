@@ -30,6 +30,4 @@ abstract class Controller
     {
         return $request->user()->can($ability, $model);
     }
-
-    
 }
