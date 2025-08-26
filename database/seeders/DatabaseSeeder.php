@@ -22,10 +22,7 @@ class DatabaseSeeder extends Seeder
 
         Role::create(['role_name' => 'Super Admin', 'description' => 'Has full access to all system features and settings.']);
         Permission::create(['permission_name' => 'full_access', 'description' => 'Can do any thing.']);
-        DB::table('role_permissions')->insert([
-            'role_id' => 1,
-            'permission_id' => 1,
-        ]);
+        DB::table('role_permissions')->insert(['role_id' => 1, 'permission_id' => 1,]);
         Admin::create(['name' => 'Nabil Fayez', 'email' => 'nabilfayez@mail.com', 'password' => Hash::make('12345678'), 'role_id' => 1]);
 
         // User::factory(10)->create();
