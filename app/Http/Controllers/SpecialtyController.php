@@ -10,11 +10,20 @@ class SpecialtyController extends Controller
 {
     public function index(Request $request)
     {
-        $page = $request->query('page', 1);
         $perPage = 10;
-        $specialties = Specialty::paginate($perPage, ['*'], 'page', $page);
-        return view('admin.specialties.index', ['specialties' => $specialties]);
+        $total = Specialty::count();
+        $pages = ceil($total / $perPage);
+        $offset = ($request->page - 1) * $perPage;
+
+        $specialties = Specialty::skip($offset)->take($perPage)->get();
+
+        return view('admin.specialties.index', [
+            'specialties' => $specialties,
+            'pages' => $pages,
+            'currentPage' => $request->page ?? 1
+        ]);
     }
+
 
     public function show($id)
     {

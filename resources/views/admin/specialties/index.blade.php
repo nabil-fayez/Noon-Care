@@ -22,13 +22,15 @@
                         <td>{{ $specialty->created_at }}</td>
                         <td>
                             <a href="{{ route('admin.specialty.show', $specialty->id) }}" class="btn btn-info">عرض</a>
-                            <a href="{{ route('admin.specialty.update', $specialty->id) }}" class="btn btn-info">تعديل</a>
-                            <a class="btn btn-danger" href="{{ route('admin.specialty.delete', $specialty->id) }}"
-                                class="btn btn-info">حذف</a>
-
+                            <a href="{{ route('admin.specialty.update', $specialty->id) }}" class="btn btn-success">تعديل</a>
+                            <a href="{{ route('admin.specialty.delete', $specialty->id) }}" class="btn btn-danger">حذف</a>
                         </td>
                     </tr>
                 @endforeach
+                @for ($i = 1; $i <= $pages; $i++)
+                    <a href="{{ route('admin.specialties.index', ['page' => $i]) }}"
+                        class="btn {{ $currentPage == $i ? 'btn-primary' : 'btn-secondary' }}">{{ $i }}</a>
+                @endfor
             </tbody>
         </table>
     </div>

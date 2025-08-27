@@ -4,16 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Doctor;
+use App\Models\Specialty;
 use Illuminate\Http\Request;
 
 class DoctorController extends Controller
 {
     public function index(Request $request)
     {
-        $page = $request->query('page', 1);
         $perPage = 10;
-        $doctors = Doctor::paginate($perPage, ['*'], 'page', $page);
-        return view('admin.doctors.index', ['doctors' => $doctors]);
+        $total = Doctor::count();
+        $pages = ceil($total / $perPage);
+        $offset = ($request->page - 1) * $perPage;
+
+        $doctors = Doctor::skip($offset)->take($perPage)->get();
+
+        return view('admin.doctors.index', [
+            'doctors' => $doctors,
+            'pages' => $pages,
+            'currentPage' => $request->page ?? 1
+        ]);
     }
     public function create(Request $request)
     {
@@ -28,7 +37,8 @@ class DoctorController extends Controller
             $doctor = Doctor::create($request->all());
             return redirect()->route('admin.doctors.index')->with('success', 'Doctor created successfully');
         }
-        return view('admin.doctors.create');
+        $specialties = Specialty::all(); // جلب كل التخصصات
+        return view('admin.doctors.create', compact('specialties'));
     }
 
     public function show($id)

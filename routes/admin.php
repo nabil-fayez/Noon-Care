@@ -29,7 +29,7 @@ Route::middleware(AdminIsLoggedInMiddleware::class)->group(function () {
     // Doctors Management
 
     Route::get('/doctors/{page?}', [DoctorController::class, 'index'])->name('admin.doctors.index');
-    Route::match(['get', 'post'], '/doctors/create', [DoctorController::class, 'create'])->name('admin.doctors.create');
+    Route::match(['get', 'post'], '/doctor/create', [DoctorController::class, 'create'])->name('admin.doctor.create');
 
 
     Route::get('/patients', function () {
