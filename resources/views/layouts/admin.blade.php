@@ -18,6 +18,8 @@
                 <ul class="nav nav-pills">
                     <li class="nav-item"><a class="nav-link" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ route('admin.doctors.index') }}">Doctors</a></li>
+                    <li class="nav-item"><a class="nav-link"
+                            href="{{ route('admin.specialties.index') }}">Specialties</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ route('admin.patients.index') }}">Patients</a>
                     </li>
                     <li class="nav-item"><a class="nav-link" href="{{ route('admin.facilities.index') }}">Facilities</a>

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class WorkingHour extends Model
 {
-protected $table = 'working_hours';
+    protected $table = 'working_hours';
 
     protected $fillable = [
         'doctor_id',
@@ -15,7 +15,7 @@ protected $table = 'working_hours';
         'start_time',
         'end_time',
     ];
-
+    protected $dates = ['created_at', 'updated_at'];
     public function doctor()
     {
         return $this->belongsTo(Doctor::class);

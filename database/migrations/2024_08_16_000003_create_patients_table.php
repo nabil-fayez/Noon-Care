@@ -15,7 +15,7 @@ class CreatePatientsTable extends Migration
             $table->string('last_name', 50);
             $table->string('email', 100)->unique();
             $table->text('password');
-                        $table->softDeletes();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

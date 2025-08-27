@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Appointment extends Model
 {
+    use SoftDeletes;
     protected $table = 'appointments';
 
     protected $fillable = [
@@ -16,7 +18,7 @@ class Appointment extends Model
         'appointment_datetime',
         'status',
     ];
-
+    protected $dates = ['deleted_at', 'created_at', 'updated_at'];
     public function doctor()
     {
         return $this->belongsTo(Doctor::class);

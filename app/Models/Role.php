@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model
 {
-protected $table = 'roles';
+    protected $table = 'roles';
 
     protected $primaryKey = 'role_id';
 
@@ -14,7 +14,7 @@ protected $table = 'roles';
         'role_name',
         'description',
     ];
-
+    protected $dates = ['created_at', 'updated_at'];
     public function admins()
     {
         return $this->hasMany(Admin::class, 'role_id');

@@ -19,7 +19,7 @@ class Admin extends Authenticatable
         'role_id',
         'is_active',
     ];
-
+    protected $dates = ['created_at', 'updated_at'];
     public function role()
     {
         return $this->belongsTo(Role::class, 'role_id');

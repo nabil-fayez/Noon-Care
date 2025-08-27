@@ -3,14 +3,32 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Doctor;
 use Illuminate\Http\Request;
 
 class DoctorController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $doctors = Doctor::all();
-        return $this->respondWithSuccess($doctors);
+        $page = $request->query('page', 1);
+        $perPage = 10;
+        $doctors = Doctor::paginate($perPage, ['*'], 'page', $page);
+        return view('admin.doctors.index', ['doctors' => $doctors]);
+    }
+    public function create(Request $request)
+    {
+        if ($request->isMethod('post')) {
+            $this->validateRequest($request, [
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:doctors,email',
+                'password' => 'required|string|min:8|confirmed',
+                'specialization' => 'required|string|max:255',
+            ]);
+
+            $doctor = Doctor::create($request->all());
+            return redirect()->route('admin.doctors.index')->with('success', 'Doctor created successfully');
+        }
+        return view('admin.doctors.create');
     }
 
     public function show($id)
