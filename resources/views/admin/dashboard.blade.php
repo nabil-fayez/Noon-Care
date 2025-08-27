@@ -2,7 +2,6 @@
 
 @section('content')
     <div class="container py-4">
-        <h1 class="mb-4 text-center">لوحة التحكم - الإدارة</h1>
         <div class="row justify-content-center">
             <div class="col-md-4 mb-4">
                 <div class="card shadow-sm border-primary">

@@ -37,7 +37,7 @@
         </main>
 
         <footer class="mt-5 text-center text-muted">
-            <p>&copy; {{ date('Y') }} Your Company. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} Noon-Care. All rights reserved.</p>
         </footer>
     </div>
     <!-- Bootstrap JS Bundle -->

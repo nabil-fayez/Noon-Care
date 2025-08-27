@@ -1,7 +1,7 @@
-@extends('layouts.admin')
+@extends('layouts.web')
 
 @section('content')
-    <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh; direction: rtl;">
+    <div class="container d-flex justify-content-center align-items-center">
         <div class="card shadow" style="max-width: 400px; width: 100%;">
             <div class="card-body">
                 <h2 class="card-title text-center mb-4 fw-bold text-primary">تسجيل الدخول</h2>
