@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
+use App\Models\Doctor;
+use App\Models\Specialty;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
@@ -37,7 +40,20 @@ class AdminController extends Controller
 
     public function dashboard()
     {
-        return view('admin.dashboard');
+        $doctorsCount = Doctor::withTrashed()->count();
+        $specialtiesCount = Specialty::count();
+        $topSpecialties = Specialty::select('specialties.id', 'specialties.name', DB::raw('COUNT(doctor_specialty.doctor_id) as doctors_count'))
+            ->join('doctor_specialty', 'specialties.id', '=', 'doctor_specialty.specialty_id')
+            ->groupBy('specialties.id', 'specialties.name')
+            ->orderByDesc('doctors_count')
+            ->limit(10)
+            ->get();
+
+        return view('admin.dashboard', [
+            'doctorsCount' => $doctorsCount,
+            'specialtiesCount' => $specialtiesCount,
+            'topSpecialties' => $topSpecialties
+        ]);
     }
     public function index()
     {

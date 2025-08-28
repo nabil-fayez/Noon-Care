@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\DoctorSpecialty;
+use App\Models\Specialty;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DoctorSpecialtyController extends Controller
 {
@@ -59,4 +62,22 @@ class DoctorSpecialtyController extends Controller
         $doctorSpecialty->delete();
         return $this->respondWithSuccess(null, 'Doctor Specialty deleted successfully');
     }
+
+    // public function topSpecialties()
+    // {
+    //     $topSpecialties = DoctorSpecialty::select('specialty_id', DB::raw('COUNT(doctor_id) as doctor_count'))
+    //         ->groupBy('specialty_id')
+    //         ->orderByDesc('doctor_count')
+    //         ->limit(10)
+    //         ->get();
+
+    //     // جلب أسماء التخصصات المرتبطة بكل ID
+    //     $topSpecialties = $topSpecialties->map(function ($item) {
+    //         $specialty = Specialty::find($item->specialty_id);
+    //         return [
+    //             'name' => $specialty ? $specialty->name : 'غير معروف',
+    //             'count' => $item->doctor_count,
+    //         ];
+    //     });
+    // }
 }

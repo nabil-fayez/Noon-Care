@@ -82,4 +82,5 @@ class SpecialtyController extends Controller
         }
         return view('admin.specialties.delete', ['specialty' => $specialty]);
     }
+
 }
