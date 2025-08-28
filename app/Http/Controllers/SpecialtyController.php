@@ -68,7 +68,7 @@ class SpecialtyController extends Controller
 
     public function delete(Request $request, $id)
     {
-        if ($request->isMethod('post')) {
+        if ($request->isMethod('delete')) {
             $specialty = Specialty::find($id);
             if (!$specialty) {
                 return $this->respondWithError('Specialty not found', 404);

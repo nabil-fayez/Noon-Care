@@ -16,7 +16,7 @@ class DoctorController extends Controller
         $pages = ceil($total / $perPage);
         $offset = ($request->page - 1) * $perPage;
 
-        $doctors = Doctor::skip($offset)->take($perPage)->get();
+        $doctors = Doctor::skip($offset)->take($perPage)->withTrashed()->get();
 
         return view('admin.doctors.index', [
             'doctors' => $doctors,
@@ -27,14 +27,28 @@ class DoctorController extends Controller
     public function create(Request $request)
     {
         if ($request->isMethod('post')) {
-            $this->validateRequest($request, [
-                'name' => 'required|string|max:255',
+            $validated = $request->validate([
+                'username' => 'required|string|max:255|unique:doctors,username',
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
                 'email' => 'required|email|unique:doctors,email',
                 'password' => 'required|string|min:8|confirmed',
-                'specialization' => 'required|string|max:255',
+                'specializations' => 'required|array|min:1',
+                'specializations.*' => 'exists:specialties,id',
+                'phone' => 'required|string|max:20',
             ]);
 
-            $doctor = Doctor::create($request->all());
+            // إنشاء الطبيب
+            $doctor = new Doctor();
+            $doctor->username = $validated['username'];
+            $doctor->first_name = $validated['first_name'];
+            $doctor->last_name = $validated['last_name'];
+            $doctor->email = $validated['email'];
+            $doctor->password = bcrypt($validated['password']);
+            $doctor->save(); // لازم يتم الحفظ هنا أولًا
+
+            // ربط التخصصات بعد الحفظ
+            $doctor->specialties()->attach($validated['specializations']);
             return redirect()->route('admin.doctors.index')->with('success', 'Doctor created successfully');
         }
         $specialties = Specialty::all(); // جلب كل التخصصات
@@ -43,52 +57,84 @@ class DoctorController extends Controller
 
     public function show($id)
     {
-        $doctor = Doctor::find($id);
+        $doctor = Doctor::withTrashed()->find($id);
         if (!$doctor) {
             return $this->respondWithError('Doctor not found', 404);
         }
-        return $this->respondWithSuccess($doctor);
-    }
-
-    public function store(Request $request)
-    {
-        $this->validateRequest($request, [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:doctors,email',
-            'password' => 'required|string|min:8|confirmed',
-            'specialization' => 'required|string|max:255',
-        ]);
-
-        $doctor = Doctor::create($request->all());
-        return $this->respondWithSuccess($doctor, 'Doctor created successfully');
+        return view('admin.doctors.show', ['doctor' => $doctor]);
     }
 
     public function update(Request $request, $id)
     {
+        if ($request->isMethod('put')) {
+            $validated = $request->validate([
+                'username' => 'required|string|max:255|unique:doctors,username,' . $id,
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'email' => 'required|email|unique:doctors,email,' . $id,
+                'specializations' => 'required|array|min:1',
+                'specializations.*' => 'exists:specialties,id',
+            ]);
+
+            $doctor = Doctor::findOrFail($id);
+            $doctor->update([
+                'username' => $validated['username'],
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'email' => $validated['email'],
+            ]);
+            $doctor->specialties()->sync($validated['specializations']);
+
+            return redirect()->route('admin.doctors.index')->with('success', 'تم تعديل بيانات الطبيب بنجاح');
+        }
         $doctor = Doctor::find($id);
         if (!$doctor) {
             return $this->respondWithError('Doctor not found', 404);
         }
+        $specialties = Specialty::all(); // جلب كل التخصصات
+        $selectedSpecialties = $doctor->specialties->pluck('id')->toArray();
 
-        $this->validateRequest($request, [
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|email|unique:doctors,email,' . $doctor->id,
-            'password' => 'sometimes|required|string|min:8|confirmed',
-            'specialization' => 'sometimes|required|string|max:255',
-        ]);
-
-        $doctor->update($request->all());
-        return $this->respondWithSuccess($doctor, 'Doctor updated successfully');
+        return view('admin.doctors.update', compact('doctor', 'specialties', 'selectedSpecialties'));
     }
 
-    public function destroy($id)
+    public function delete(Request $request, $id)
     {
+        if ($request->isMethod('delete')) {
+            $doctor = Doctor::find($id);
+            if (!$doctor) {
+                return $this->respondWithError('Doctor not found', 404);
+            }
+            $doctor->specialties()->detach(); // فصل التخصصات المرتبطة
+            $doctor->delete();
+            return redirect()->route('admin.doctors.index')->with('success', 'Doctor deleted successfully');
+        }
         $doctor = Doctor::find($id);
         if (!$doctor) {
             return $this->respondWithError('Doctor not found', 404);
         }
+        $specialties = Specialty::all(); // جلب كل التخصصات
+        $selectedSpecialties = $doctor->specialties->pluck('id')->toArray();
 
-        $doctor->delete();
-        return $this->respondWithSuccess(null, 'Doctor deleted successfully');
+        return view('admin.doctors.delete', compact('doctor', 'specialties', 'selectedSpecialties'));
+    }
+
+    public function restore($id)
+    {
+        $doctor = Doctor::withTrashed()->find($id);
+        if (!$doctor) {
+            return $this->respondWithError('Doctor not found', 404);
+        }
+        $doctor->restore();
+        return redirect()->route('admin.doctors.index')->with('success', 'Doctor restored successfully');
+    }
+    public function destroy($id)
+    {
+        $doctor = Doctor::withTrashed()->find($id);
+        if (!$doctor) {
+            return $this->respondWithError('Doctor not found', 404);
+        }
+        $doctor->specialties()->detach(); // فصل التخصصات المرتبطة
+        $doctor->forceDelete();
+        return redirect()->route('admin.doctors.index')->with('success', 'Doctor permanently deleted');
     }
 }

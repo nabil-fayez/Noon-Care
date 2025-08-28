@@ -5,6 +5,7 @@
         <h1>تعديل تخصص </h1>
         <form action="{{ route('admin.specialty.update', $specialty->id) }}" method="POST">
             @csrf
+            @method('PUT')
             <div class="form-group">
                 <label for="name">الاسم</label>
                 <input type="text" class="form-control" id="name" name="name" value="{{ $specialty->name }}" required>
