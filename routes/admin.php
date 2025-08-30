@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\PatientController;
 use App\Http\Controllers\SpecialtyController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AdminIsLoggedInMiddleware;
@@ -27,7 +28,6 @@ Route::middleware(AdminIsLoggedInMiddleware::class)->group(function () {
     Route::match(['get', 'delete'], '/specialty/delete/{id}', [SpecialtyController::class, 'delete'])->name('admin.specialty.delete');
 
     // Doctors Management
-
     Route::get('/doctors/{page?}', [DoctorController::class, 'index'])->name('admin.doctors.index');
     Route::match(['get', 'post'], '/doctor/create', [DoctorController::class, 'create'])->name('admin.doctor.create');
     Route::get('/doctor/show/{id}', [DoctorController::class, 'show'])->name('admin.doctor.show');
@@ -35,6 +35,17 @@ Route::middleware(AdminIsLoggedInMiddleware::class)->group(function () {
     Route::match(['get', 'delete'], '/doctor/delete/{id}', [DoctorController::class, 'delete'])->name('admin.doctor.delete');
     Route::get('/doctor/restore/{id}', [DoctorController::class, 'restore'])->name('admin.doctor.restore');
     Route::get('/doctor/destroy/{id}', [DoctorController::class, 'destroy'])->name('admin.doctor.destroy');
+
+    // Patients Management
+    Route::get('/patients/{page?}', [PatientController::class, 'index'])->name('admin.patients.index');
+    Route::match(['get', 'post'], '/patient/create', [PatientController::class, 'create'])->name('admin.patient.create');
+    Route::get('/patient/show/{id}', [PatientController::class, 'show'])->name('admin.patient.show');
+    Route::match(['get', 'put'], '/patient/update/{id}', [PatientController::class, 'update'])->name('admin.patient.update');
+    Route::match(['get', 'delete'], '/patient/delete/{id}', [PatientController::class, 'delete'])->name('admin.patient.delete');
+    Route::get('/patient/restore/{id}', [PatientController::class, 'restore'])->name('admin.patient.restore');
+    Route::get('/patient/destroy/{id}', [PatientController::class, 'destroy'])->name('admin.patient.destroy');
+
+
 
 
     Route::get('/patients', function () {
