@@ -11,9 +11,12 @@ class CreateFacilitiesTable extends Migration
         Schema::create('facilities', function (Blueprint $table) {
             $table->id();
             $table->string('username', 50)->unique();
+            $table->string('email', 255);
+            $table->text('password');
             $table->string('business_name', 100);
             $table->string('address', 255)->nullable();
             $table->string('phone', 20)->nullable();
+            $table->string('type', 255);
             $table->softDeletes();
             $table->timestamps();
         });

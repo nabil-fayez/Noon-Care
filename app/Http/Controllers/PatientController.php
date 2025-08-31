@@ -90,8 +90,6 @@ class PatientController extends Controller
         if (!$patient) {
             return $this->respondWithError('Doctor not found', 404);
         }
-
-
         return view('admin.patients.delete', compact('patient'));
     }
 

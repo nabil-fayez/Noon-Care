@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\SpecialtyController;
 use Illuminate\Support\Facades\Route;
@@ -45,15 +46,19 @@ Route::middleware(AdminIsLoggedInMiddleware::class)->group(function () {
     Route::get('/patient/restore/{id}', [PatientController::class, 'restore'])->name('admin.patient.restore');
     Route::get('/patient/destroy/{id}', [PatientController::class, 'destroy'])->name('admin.patient.destroy');
 
+    // Facilities Management
+    Route::get('/facilities/{page?}', [FacilityController::class, 'index'])->name('admin.facilities.index');
+    Route::match(['get', 'post'], '/facility/create', [FacilityController::class, 'create'])->name('admin.facility.create');
+    Route::get('/facility/show/{id}', [FacilityController::class, 'show'])->name('admin.facility.show');
+    Route::match(['get', 'put'], '/facility/update/{id}', [FacilityController::class, 'update'])->name('admin.facility.update');
+    Route::match(['get', 'delete'], '/facility/delete/{id}', [FacilityController::class, 'delete'])->name('admin.facility.delete');
+    Route::get('/facility/restore/{id}', [FacilityController::class, 'restore'])->name('admin.facility.restore');
+    Route::get('/facility/destroy/{id}', [FacilityController::class, 'destroy'])->name('admin.facility.destroy');
+
+    //
 
 
 
-    Route::get('/patients', function () {
-        return view('admin.patient.index');
-    })->name('admin.patients.index');
-    Route::get('/facilities', function () {
-        return view('admin.facility.index');
-    })->name('admin.facilities.index');
     Route::get('/appointments', function () {
         return view('admin.appointment.index');
     })->name('admin.appointments.index');
