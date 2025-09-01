@@ -13,13 +13,11 @@ Route::get('/', function () {
     return redirect()->route('admin.login');
 })->name('admin.home');
 
-Route::middleware(AdminIsLoggedOutMiddleware::class)->group(function () {
+Route::middleware('guest')->group(function () {
     Route::match(['get', 'post'], '/login', [AdminController::class, 'login'])->name('admin.login');
 });
-Route::get('/test', function () {
-    return dd(Auth::user());
-})->middleware('user.type:admin');
-Route::middleware(AdminIsLoggedInMiddleware::class)->group(function () {
+
+Route::middleware('user.type:admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::match(['get', 'post'], '/logout', [AdminController::class, 'logout'])->name('admin.logout');
 
