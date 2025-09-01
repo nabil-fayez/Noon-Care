@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateAdminsTable extends Migration
+return new class extends Migration
 {
     public function up()
     {
@@ -15,13 +15,16 @@ class CreateAdminsTable extends Migration
             $table->string('password', 255);
             $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
             $table->boolean('is_active')->default(true);
-            $table->softDeletes();
             $table->timestamps();
         });
     }
 
     public function down()
     {
+        Schema::table('admins', function (Blueprint $table) {
+            $table->dropForeign(['role_id']);
+        });
+        
         Schema::dropIfExists('admins');
     }
-}
+};

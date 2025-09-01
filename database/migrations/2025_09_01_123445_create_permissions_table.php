@@ -4,15 +4,15 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreatePermissionsTable extends Migration
+return new class extends Migration
 {
     public function up()
     {
         Schema::create('permissions', function (Blueprint $table) {
             $table->id();
             $table->string('permission_name', 100)->unique();
+            $table->string('display_name', 100)->nullable();
             $table->text('description')->nullable();
-            $table->softDeletes();
             $table->timestamps();
         });
     }
@@ -21,4 +21,4 @@ class CreatePermissionsTable extends Migration
     {
         Schema::dropIfExists('permissions');
     }
-}
+};
