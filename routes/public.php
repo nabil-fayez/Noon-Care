@@ -8,3 +8,5 @@ Route::get(
         return view('welcome');
     }
 )->name('welcome');
+
+

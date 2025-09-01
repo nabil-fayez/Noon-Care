@@ -5,40 +5,64 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Symfony\Component\HttpFoundation\Response;
 
 class CheckUserTypeMiddleware
 {
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @param  mixed  ...$types
+     * @return mixed
      */
     public function handle(Request $request, Closure $next, ...$types)
     {
-        $user = $request->user();
+        // محاولة الحصول على المستخدم من جميع الـ guards المتاحة
+        $user = $this->getAuthenticatedUser();
+        dd($user);
         if (!$user) {
             return redirect()->route('welcome');
         }
+
+        // الحصول على نوع المستخدم
         $userType = $this->getUserType($user);
+        
         if (!in_array($userType, $types)) {
             abort(403, 'غير مصرح بالوصول');
         }
+
         return $next($request);
     }
 
-    protected function getUserType($user)
+    /**
+     * الحصول على المستخدم المصادق من أي guard
+     */
+    private function getAuthenticatedUser()
     {
-        if ($user instanceof \App\Models\Patient) {
-            return 'patient';
-        } elseif ($user instanceof \App\Models\Doctor) {
-            return 'doctor';
-        } elseif ($user instanceof \App\Models\Facility) {
-            return 'facility';
-        } elseif ($user instanceof \App\Models\Admin) {
-            return 'admin';
+        $guards = config('auth.guards');
+        
+        foreach ($guards as $guard => $config) {
+            $user = Auth::guard($guard)->user();
+            if ($user) {
+                return $user;
+            }
         }
+        
+        return null;
+    }
 
-        return false;
+    /**
+     * تحديد نوع المستخدم ديناميكياً
+     */
+    private function getUserType($user)
+    {
+        $userClass = get_class($user);
+        
+        // تحويل اسم الكلاس إلى نوع مستخدم
+        $classParts = explode('\\', $userClass);
+        $className = end($classParts);
+        
+        return strtolower($className);
     }
 }

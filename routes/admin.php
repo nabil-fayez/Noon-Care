@@ -8,7 +8,7 @@ use App\Http\Controllers\SpecialtyController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AdminIsLoggedInMiddleware;
 use App\Http\Middleware\AdminIsLoggedOutMiddleware;
-
+use Illuminate\Support\Facades\Auth;
 Route::get('/', function () {
     return redirect()->route('admin.login');
 })->name('admin.home');
@@ -16,7 +16,9 @@ Route::get('/', function () {
 Route::middleware(AdminIsLoggedOutMiddleware::class)->group(function () {
     Route::match(['get', 'post'], '/login', [AdminController::class, 'login'])->name('admin.login');
 });
-
+Route::get('/test', function () {
+    return dd(Auth::user());
+})->middleware('user.type:admin');
 Route::middleware(AdminIsLoggedInMiddleware::class)->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::match(['get', 'post'], '/logout', [AdminController::class, 'logout'])->name('admin.logout');
