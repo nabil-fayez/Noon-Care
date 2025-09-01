@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Facility extends Model
 {
-use SoftDeletes;
 
     protected $table = 'facilities';
 
@@ -18,7 +17,7 @@ use SoftDeletes;
         'phone',
     ];
 
-    protected $dates = ['deleted_at', 'created_at', 'updated_at'];
+    protected $dates = ['created_at', 'updated_at'];
 
     public function doctors()
     {

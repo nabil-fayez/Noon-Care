@@ -36,7 +36,7 @@ return new class extends Migration
             $table->dropForeign(['service_id']);
             $table->dropForeign(['insurance_company_id']);
         });
-        
+
         Schema::dropIfExists('appointments');
     }
 };

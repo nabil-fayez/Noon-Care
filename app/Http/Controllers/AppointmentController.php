@@ -2,65 +2,39 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Models\Appointment;
+use App\Models\Doctor;
+use App\Models\Facility;
+use App\Services\AppointmentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Whoops\Exception\Formatter;
 
 class AppointmentController extends Controller
 {
-    public function index()
-    {
-        $appointments = Appointment::all();
-        return $this->respondWithSuccess($appointments);
-    }
+    protected $appointmentService;
 
-    public function show($id)
+    public function __construct(AppointmentService $appointmentService)
     {
-        $appointment = Appointment::find($id);
-        if (!$appointment) {
-            return $this->respondWithError('Appointment not found', 404);
-        }
-        return $this->respondWithSuccess($appointment);
+        $this->appointmentService = $appointmentService;
     }
 
     public function store(Request $request)
     {
-        $this->validateRequest($request, [
-            'patient_id' => 'required|exists:patients,id',
-            'doctor_id' => 'required|exists:doctors,id',
-            'appointment_date' => 'required|date',
-            'status' => 'required|string|max:255',
-        ]);
+        $validated = $request->validate([]);
+        $doctorId = Doctor::where('username', '=', $validated['doctor_username'])->id();
+        $patientId = Auth::guard('patient')->user()->id();
+        $facilityId = Facility::where('username', '=', $validated['facility_username'])->id();
+        $datetime = $validated['date'] . ' ' . $validated['time'];
+        $notes = $validated['notes'];
 
-        $appointment = Appointment::create($request->all());
-        return $this->respondWithSuccess($appointment, 'Appointment created successfully');
+        $appointment = $this->appointmentService->bookAppointment($patientId, $doctorId, $facilityId, $datetime, $notes);
+
+        return response()->json($appointment, 201);
     }
 
-    public function update(Request $request, $id)
+    public function cancel(Appointment $appointment)
     {
-        $appointment = Appointment::find($id);
-        if (!$appointment) {
-            return $this->respondWithError('Appointment not found', 404);
-        }
-
-        $this->validateRequest($request, [
-            'patient_id' => 'sometimes|required|exists:patients,id',
-            'doctor_id' => 'sometimes|required|exists:doctors,id',
-            'appointment_date' => 'sometimes|required|date',
-            'status' => 'sometimes|required|string|max:255',
-        ]);
-
-        $appointment->update($request->all());
-        return $this->respondWithSuccess($appointment, 'Appointment updated successfully');
-    }
-
-    public function destroy($id)
-    {
-        $appointment = Appointment::find($id);
-        if (!$appointment) {
-            return $this->respondWithError('Appointment not found', 404);
-        }
-
-        $appointment->delete();
-        return $this->respondWithSuccess(null, 'Appointment deleted successfully');
+        // إلغاء الموعد (سيتم تنفيذ المنطق في Service)
     }
 }

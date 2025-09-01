@@ -2,139 +2,325 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Doctor;
 use App\Models\Specialty;
+use App\Services\DoctorService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class DoctorController extends Controller
 {
+    protected $doctorService;
+    protected $notificationService;
+
+    public function __construct(DoctorService $doctorService, NotificationService $notificationService)
+    {
+        $this->doctorService = $doctorService;
+        $this->notificationService = $notificationService;
+    }
+
+    /**
+     * عرض قائمة الأطباء
+     */
     public function index(Request $request)
     {
-        $perPage = 10;
-        $total = Doctor::count();
-        $pages = ceil($total / $perPage);
-        $offset = ($request->page - 1) * $perPage;
+        try {
+            $perPage = $request->get('per_page', 10);
+            $doctors = $this->doctorService->getDoctors($request->all(), $perPage);
 
-        $doctors = Doctor::skip($offset)->take($perPage)->withTrashed()->get();
+            return view('admin.doctors.index', [
+                'doctors' => $doctors,
+                'specialties' => Specialty::all(),
+                'filters' => $request->all()
+            ]);
+        } catch (\Exception $e) {
+            dd($e);
+            exit;
+            return redirect()->back()->with('error', 'حدث خطأ أثناء جلب بيانات الأطباء: ' . $e->getMessage());
+        }
+    }
 
-        return view('admin.doctors.index', [
-            'doctors' => $doctors,
-            'pages' => $pages,
-            'currentPage' => $request->page ?? 1
+    /**
+     * عرض نموذج إنشاء طبيب جديد
+     */
+    public function create()
+    {
+        return view('admin.doctors.create', [
+            'specialties' => Specialty::all(),
+            'doctor' => new Doctor() // نموذج فارغ للاستخدام في الفورم
         ]);
     }
-    public function create(Request $request)
+
+    /**
+     * حفظ طبيب جديد
+     */
+    public function store(Request $request)
     {
-        if ($request->isMethod('post')) {
-            $validated = $request->validate([
-                'username' => 'required|string|max:255|unique:doctors,username',
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'email' => 'required|email|unique:doctors,email',
-                'password' => 'required|string|min:8|confirmed',
-                'specializations' => 'required|array|min:1',
-                'specializations.*' => 'exists:specialties,id',
-                'phone' => 'required|string|max:20',
-            ]);
+        try {
+            $validated = $this->validateDoctorData($request);
 
-            // إنشاء الطبيب
-            $doctor = new Doctor();
-            $doctor->username = $validated['username'];
-            $doctor->first_name = $validated['first_name'];
-            $doctor->last_name = $validated['last_name'];
-            $doctor->email = $validated['email'];
-            $doctor->password = bcrypt($validated['password']);
-            $doctor->save(); // لازم يتم الحفظ هنا أولًا
+            // إنشاء الطبيب باستخدام الخدمة
+            $doctor = $this->doctorService->createDoctor($validated);
+            // إرسال إشعار للمسؤول
+            $this->notificationService->sendNotification(
+                1,
+                'admin',
+                'طبيب جديد',
+                'تم إضافة طبيب جديد: ' . $doctor->full_name
+            );
 
-            // ربط التخصصات بعد الحفظ
-            $doctor->specialties()->attach($validated['specializations']);
-            return redirect()->route('admin.doctors.index')->with('success', 'Doctor created successfully');
+            return redirect()->route('admin.doctors.index')
+                ->with('success', 'تم إنشاء الطبيب بنجاح وإرسال بيانات التسجيل.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء إنشاء الطبيب: ' . $e->getMessage());
         }
-        $specialties = Specialty::all(); // جلب كل التخصصات
-        return view('admin.doctors.create', compact('specialties'));
     }
 
-    public function show($id)
+    /**
+     * عرض بيانات طبيب
+     */
+    public function show(Doctor $doctor)
     {
-        $doctor = Doctor::withTrashed()->find($id);
-        if (!$doctor) {
-            return $this->respondWithError('Doctor not found', 404);
+        try {
+            $doctor->load(['specialties', 'facilities', 'appointments', 'reviews']);
+
+            $allSpecialties = Specialty::all();
+
+            return view('admin.doctors.show', compact('doctor', 'allSpecialties'));
+        } catch (\Exception $e) {
+            dd($e);
+            exit;
+            return redirect()->back()->with('error', 'حدث خطأ أثناء جلب بيانات الطبيب: ' . $e->getMessage());
         }
-        return view('admin.doctors.show', ['doctor' => $doctor]);
     }
 
-    public function update(Request $request, $id)
+
+    /**
+     * عرض نموذج تعديل طبيب
+     */
+    public function edit(Doctor $doctor)
     {
-        if ($request->isMethod('put')) {
-            $validated = $request->validate([
-                'username' => 'required|string|max:255|unique:doctors,username,' . $id,
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'email' => 'required|email|unique:doctors,email,' . $id,
-                'specializations' => 'required|array|min:1',
-                'specializations.*' => 'exists:specialties,id',
-            ]);
+        try {
+            $doctor->load('specialties');
+            $specialties = Specialty::all();
+            $selectedSpecialties = $doctor->specialties->pluck('id')->toArray();
 
-            $doctor = Doctor::findOrFail($id);
-            $doctor->update([
-                'username' => $validated['username'],
-                'first_name' => $validated['first_name'],
-                'last_name' => $validated['last_name'],
-                'email' => $validated['email'],
-            ]);
-            $doctor->specialties()->sync($validated['specializations']);
-
-            return redirect()->route('admin.doctors.index')->with('success', 'تم تعديل بيانات الطبيب بنجاح');
+            return view('admin.doctors.update', compact('doctor', 'specialties', 'selectedSpecialties'));
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء تحميل صفحة التعديل: ' . $e->getMessage());
         }
-        $doctor = Doctor::find($id);
-        if (!$doctor) {
-            return $this->respondWithError('Doctor not found', 404);
-        }
-        $specialties = Specialty::all(); // جلب كل التخصصات
-        $selectedSpecialties = $doctor->specialties->pluck('id')->toArray();
-
-        return view('admin.doctors.update', compact('doctor', 'specialties', 'selectedSpecialties'));
     }
 
-    public function delete(Request $request, $id)
+    /**
+     * تحديث بيانات الطبيب
+     */
+    public function update(Request $request, Doctor $doctor)
     {
-        if ($request->isMethod('delete')) {
-            $doctor = Doctor::find($id);
-            if (!$doctor) {
-                return $this->respondWithError('Doctor not found', 404);
+        try {
+            $validated = $this->validateDoctorData($request, $doctor->id);
+
+            // تحديث الطبيب باستخدام الخدمة
+            $this->doctorService->updateDoctor($doctor, $validated);
+
+            return redirect()->route('admin.doctor.show', $doctor)
+                ->with('success', 'تم تحديث بيانات الطبيب بنجاح.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء تحديث الطبيب: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * تحديث تخصصات الطبيب
+     */
+    public function updateSpecialties(Request $request, Doctor $doctor)
+    {
+        try {
+            $request->validate([
+                'specialties' => 'required|array|min:1',
+                'specialties.*' => 'exists:specialties,id'
+            ]);
+
+            $doctor->specialties()->sync($request->specialties);
+
+            return redirect()->route('admin.doctor.show', $doctor)
+                ->with('success', 'تم تحديث تخصصات الطبيب بنجاح');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء تحديث التخصصات: ' . $e->getMessage());
+        }
+    }
+    /**
+     * عرض نموذج تأكيد الحذف
+     */
+    public function delete(Doctor $doctor)
+    {
+        try {
+            // تحميل العلاقات لحساب الإحصائيات
+            $doctor->loadCount(['appointments', 'reviews', 'facilities']);
+
+            return view('admin.doctors.delete', compact('doctor'));
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء تحميل صفحة الحذف: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * حذف طبيب (Soft Delete)
+     */
+    public function destroy(Request $request, Doctor $doctor)
+    {
+        try {
+            $request->validate([
+                'reason' => 'nullable|string|max:500'
+            ]);
+
+            // تسجيل سبب الحذف إذا كان موجوداً
+            $reason = $request->input('reason');
+            if ($reason) {
+                // يمكنك حفظ سبب الحذف في حقل مخصص أو في جدول منفصل للسجلات
+                // مثال: $doctor->delete_reason = $reason;
             }
-            $doctor->specialties()->detach(); // فصل التخصصات المرتبطة
-            $doctor->delete();
-            return redirect()->route('admin.doctors.index')->with('success', 'Doctor deleted successfully');
-        }
-        $doctor = Doctor::find($id);
-        if (!$doctor) {
-            return $this->respondWithError('Doctor not found', 404);
-        }
-        $specialties = Specialty::all(); // جلب كل التخصصات
-        $selectedSpecialties = $doctor->specialties->pluck('id')->toArray();
 
-        return view('admin.doctors.delete', compact('doctor', 'specialties', 'selectedSpecialties'));
+            // حذف الطبيب باستخدام الخدمة (Soft Delete)
+            $this->doctorService->deleteDoctor($doctor);
+
+            return redirect()->route('admin.doctors.index')
+                ->with('success', 'تم حذف الطبيب بنجاح. يمكنك استعادته من سلة المحذوفات.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء حذف الطبيب: ' . $e->getMessage());
+        }
     }
 
+    /**
+     * استعادة طبيب محذوف
+     */
     public function restore($id)
     {
-        $doctor = Doctor::withTrashed()->find($id);
-        if (!$doctor) {
-            return $this->respondWithError('Doctor not found', 404);
+        try {
+            $doctor = Doctor::withTrashed()->findOrFail($id);
+            $this->doctorService->restoreDoctor($doctor);
+
+            return redirect()->route('admin.doctors.index')
+                ->with('success', 'تم استعادة الطبيب بنجاح.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء استعادة الطبيب: ' . $e->getMessage());
         }
-        $doctor->restore();
-        return redirect()->route('admin.doctors.index')->with('success', 'Doctor restored successfully');
     }
-    public function destroy($id)
+
+    /**
+     * حذف طبيب نهائيًا (Force Delete)
+     */
+    public function forceDestroy($id)
     {
-        $doctor = Doctor::withTrashed()->find($id);
-        if (!$doctor) {
-            return $this->respondWithError('Doctor not found', 404);
+        try {
+            $doctor = Doctor::withTrashed()->findOrFail($id);
+            $this->doctorService->forceDeleteDoctor($doctor);
+
+            return redirect()->route('admin.doctors.index')
+                ->with('success', 'تم حذف الطبيب نهائيًا بنجاح.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء الحذف النهائي للطبيب: ' . $e->getMessage());
         }
-        $doctor->specialties()->detach(); // فصل التخصصات المرتبطة
-        $doctor->forceDelete();
-        return redirect()->route('admin.doctors.index')->with('success', 'Doctor permanently deleted');
+    }
+
+    /**
+     * التحقق من صحة بيانات الطبيب
+     */
+    private function validateDoctorData(Request $request, $doctorId = null)
+    {
+        $rules = [
+            'username' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('doctors')->ignore($doctorId)
+            ],
+            'first_name' => 'required|string|max:50',
+            'last_name' => 'required|string|max:50',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('doctors')->ignore($doctorId)
+            ],
+            'phone' => 'nullable|string|max:15',
+            'bio' => 'nullable|string|max:1000',
+            'specializations' => 'required|array|min:1',
+            'specializations.*' => 'exists:specialties,id',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ];
+
+        // إضافة قاعدة كلمة المرور فقط عند الإنشاء
+        if (!$doctorId) {
+            $rules['password'] = 'required|string|min:8|confirmed';
+        } else {
+            $rules['password'] = 'nullable|string|min:8|confirmed';
+        }
+        return $request->validate($rules);
+    }
+
+    /**
+     * تغيير حالة توثيق الطبيب
+     */
+    public function toggleVerification(Doctor $doctor)
+    {
+        try {
+            $this->doctorService->toggleVerification($doctor);
+
+            $status = $doctor->is_verified ? 'موثق' : 'غير موثق';
+            $message = "تم تغيير حالة توثيق الطبيب إلى: $status";
+
+            return redirect()->back()->with('success', $message);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء تغيير حالة التوثيق: ' . $e->getMessage());
+        }
+    }
+
+
+    /**
+     * عرض قائمة الأطباء المحذوفين
+     */
+    public function trashed(Request $request)
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+            $doctors = Doctor::onlyTrashed()
+                ->with(['specialties'])
+                ->orderBy('deleted_at', 'desc')
+                ->paginate($perPage);
+
+            return view('admin.doctors.trashed', [
+                'doctors' => $doctors
+            ]);
+        } catch (\Exception $e) {
+            dd($e);
+            exit;
+            return redirect()->back()->with('error', 'حدث خطأ أثناء جلب الأطباء المحذوفين: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * API: الحصول على الأطباء حسب التخصص
+     */
+    public function getBySpecialty(Request $request)
+    {
+        try {
+            $specialtyId = $request->get('specialty_id');
+            $doctors = $this->doctorService->getDoctorsBySpecialty($specialtyId);
+
+            return response()->json([
+                'success' => true,
+                'doctors' => $doctors
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ أثناء جلب الأطباء: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

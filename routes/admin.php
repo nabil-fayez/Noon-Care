@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AdminIsLoggedInMiddleware;
 use App\Http\Middleware\AdminIsLoggedOutMiddleware;
 use Illuminate\Support\Facades\Auth;
+
 Route::get('/', function () {
     return redirect()->route('admin.login');
 })->name('admin.home');
@@ -18,7 +19,11 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('user.type:admin')->group(function () {
+
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/settings', function () {
+        return dd('break point');
+    })->name('admin.settings');
     Route::match(['get', 'post'], '/logout', [AdminController::class, 'logout'])->name('admin.logout');
 
     // Specialties Management
@@ -28,14 +33,21 @@ Route::middleware('user.type:admin')->group(function () {
     Route::match(['get', 'put'], '/specialty/update/{id}', [SpecialtyController::class, 'update'])->name('admin.specialty.update');
     Route::match(['get', 'delete'], '/specialty/delete/{id}', [SpecialtyController::class, 'delete'])->name('admin.specialty.delete');
 
-    // Doctors Management
-    Route::get('/doctors/{page?}', [DoctorController::class, 'index'])->name('admin.doctors.index');
-    Route::match(['get', 'post'], '/doctor/create', [DoctorController::class, 'create'])->name('admin.doctor.create');
-    Route::get('/doctor/show/{id}', [DoctorController::class, 'show'])->name('admin.doctor.show');
-    Route::match(['get', 'put'], '/doctor/update/{id}', [DoctorController::class, 'update'])->name('admin.doctor.update');
-    Route::match(['get', 'delete'], '/doctor/delete/{id}', [DoctorController::class, 'delete'])->name('admin.doctor.delete');
-    Route::get('/doctor/restore/{id}', [DoctorController::class, 'restore'])->name('admin.doctor.restore');
-    Route::get('/doctor/destroy/{id}', [DoctorController::class, 'destroy'])->name('admin.doctor.destroy');
+    // Doctors Management Routes
+    Route::get('/doctors/{per_page?}', [DoctorController::class, 'index'])->name('admin.doctors.index');
+    Route::get('/doctors/trashed/{per_page?}', [DoctorController::class, 'trashed'])->name('admin.doctors.trashed');
+    Route::get('/doctor/create', [DoctorController::class, 'create'])->name('admin.doctor.create');
+    Route::post('/doctor/store', [DoctorController::class, 'store'])->name('admin.doctor.store');
+    Route::get('/doctor/{doctor}/show', [DoctorController::class, 'show'])->name('admin.doctor.show');
+    Route::get('/doctor/{doctor}/edit', [DoctorController::class, 'edit'])->name('admin.doctor.edit');
+    Route::put('/doctor/{doctor}/update', [DoctorController::class, 'update'])->name('admin.doctor.update');
+    Route::put('/doctors/{doctor}/update/specialties', [DoctorController::class, 'updateSpecialties'])->name('admin.doctor.updateSpecialties');
+    Route::get('/doctor/{doctor}/delete', [DoctorController::class, 'delete'])->name('admin.doctor.delete');
+    Route::delete('/doctor/{doctor}/destroy', [DoctorController::class, 'destroy'])->name('admin.doctor.destroy');
+    Route::post('/doctor/{id}/restore', [DoctorController::class, 'restore'])->name('admin.doctor.restore');
+    Route::delete('/doctor/{id}/force', [DoctorController::class, 'forceDestroy'])->name('admin.doctor.forceDestroy');
+    Route::post('/doctor/{doctor}/toggle-verification', [DoctorController::class, 'toggleVerification'])->name('admin.doctor.toggleVerification');
+    // End Doctors Management Routes
 
     // Patients Management
     Route::get('/patients/{page?}', [PatientController::class, 'index'])->name('admin.patients.index');
@@ -60,7 +72,7 @@ Route::middleware('user.type:admin')->group(function () {
 
 
     Route::get('/appointments', function () {
-        return view('admin.appointment.index');
+        return view('admin.appointments.index');
     })->name('admin.appointments.index');
     Route::get('/reports', function () {
         return view('admin.reports.bookings');

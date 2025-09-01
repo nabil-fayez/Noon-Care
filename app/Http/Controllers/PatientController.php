@@ -3,11 +3,51 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Appointment;
 use App\Models\Patient;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PatientController extends Controller
 {
+    public function dashboard()
+    {
+        $user = Auth::guard('patient')->user();
+
+        $upcomingAppointments = Appointment::where('patient_id', $user->id)
+            ->where('status', 'confirmed')
+            ->where('appointment_datetime', '>', now())
+            ->count();
+
+        $completedAppointments = Appointment::where('patient_id', $user->id)
+            ->where('status', 'done')
+            ->count();
+
+        $reviewsCount = $user->reviews()->count();
+
+        $recentAppointments = Appointment::with('doctor')
+            ->where('patient_id', $user->id)
+            ->where('appointment_datetime', '>', now())
+            ->orderBy('appointment_datetime')
+            ->take(5)
+            ->get();
+
+        return view('patient.dashboard', compact(
+            'upcomingAppointments',
+            'completedAppointments',
+            'reviewsCount',
+            'recentAppointments'
+        ));
+    }
+    public function appointments()
+    {
+        $appointments = Appointment::with(['doctor', 'facility'])
+            ->where('patient_id', auth('patient')->id())
+            ->orderBy('appointment_datetime', 'desc')
+            ->paginate(10);
+
+        return view('patient.appointments.index', compact('appointments'));
+    }
 
     public function index(Request $request)
     {

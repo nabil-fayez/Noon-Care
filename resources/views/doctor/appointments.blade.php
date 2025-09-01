@@ -1,23 +1,22 @@
 @extends('layouts.app')
 
-@section('title', 'إدارة المواعيد - Noon Care')
+@section('title', 'إدارة المواعيد')
 
 @section('content')
     <div class="container">
         <div class="row">
             <div class="col-md-3">
-                @include('doctor.partials.sidebar')
+                <!-- Sidebar similar to patient dashboard -->
             </div>
 
             <div class="col-md-9">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">جدول المواعيد</h5>
+                        <h5>جدول المواعيد</h5>
                         <div>
                             <input type="date" class="form-control" id="datePicker" value="{{ $selectedDate }}">
                         </div>
                     </div>
-
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-bordered">
@@ -39,16 +38,7 @@
                                             <td>{{ $timeSlot }}</td>
                                             <td>
                                                 @if ($appointment)
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="{{ $appointment->patient->profile_image_url ?? 'https://via.placeholder.com/40' }}"
-                                                            class="rounded-circle me-2" width="40" height="40">
-                                                        <div>
-                                                            <strong>{{ $appointment->patient->full_name }}</strong>
-                                                            <br>
-                                                            <small
-                                                                class="text-muted">{{ $appointment->patient->phone }}</small>
-                                                        </div>
-                                                    </div>
+                                                    {{ $appointment->patient->name }}
                                                 @else
                                                     <span class="text-muted">فارغ</span>
                                                 @endif
@@ -89,16 +79,14 @@
 
     <!-- Modal for appointment details -->
     <div class="modal fade" id="appointmentModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">تفاصيل الموعد</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="appointmentDetails">
-                        <!-- سيتم تحميل التفاصيل هنا عبر AJAX -->
-                    </div>
+                    <!-- Appointment details will be loaded via AJAX -->
                 </div>
             </div>
         </div>
@@ -106,21 +94,18 @@
 
     @push('scripts')
         <script>
-            // تغيير التاريخ
             document.getElementById('datePicker').addEventListener('change', function() {
                 window.location.href = '{{ route('doctor.appointments') }}?date=' + this.value;
             });
 
-            // تحميل تفاصيل الموعد
             $('#appointmentModal').on('show.bs.modal', function(event) {
                 var button = $(event.relatedTarget);
                 var appointmentId = button.data('appointment-id');
 
                 $.get('/doctor/appointments/' + appointmentId, function(data) {
-                    $('#appointmentDetails').html(data);
+                    $('#appointmentModal .modal-body').html(data);
                 });
             });
         </script>
     @endpush
-
 @endsection

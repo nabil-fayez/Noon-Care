@@ -3,31 +3,30 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Patient extends Model
 {
-use SoftDeletes;
-
-    protected $table = 'patients';
-
     protected $fillable = [
         'username',
         'first_name',
         'last_name',
         'email',
         'password',
+        'phone',
+        'date_of_birth',
+        'gender'
     ];
 
-    protected $dates = ['deleted_at', 'created_at', 'updated_at'];
+    protected $hidden = ['password'];
 
-    public function appointments()
+    public function appointments(): HasMany
     {
         return $this->hasMany(Appointment::class);
     }
 
-    public function getFullNameAttribute()
+    public function reviews(): HasMany
     {
-        return "{$this->first_name} {$this->last_name}";
+        return $this->hasMany(Review::class);
     }
 }
