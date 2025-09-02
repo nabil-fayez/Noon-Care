@@ -13,6 +13,8 @@ return new class extends Migration
             $table->string('name', 100)->unique();
             $table->text('description')->nullable();
             $table->string('icon', 255)->nullable();
+            $table->string('color',30)->nullable();
+            $table->string('is_active',30)->nullable();
             $table->timestamps();
         });
     }

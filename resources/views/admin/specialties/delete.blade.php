@@ -24,7 +24,7 @@
             <!-- أزرار التنقل -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <a href="{{ route('admin.specialties.show', $specialty) }}" class="btn btn-secondary">
+                    <a href="{{ route('admin.specialty.show', $specialty) }}" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> العودة إلى تفاصيل التخصص
                     </a>
                 </div>
@@ -108,7 +108,7 @@
                     @endif
 
                     <!-- نموذج الحذف -->
-                    <form method="POST" action="{{ route('admin.specialties.destroy', $specialty) }}" id="deleteForm">
+                    <form method="POST" action="{{ route('admin.specialty.destroy', $specialty) }}" id="deleteForm">
                         @csrf
                         @method('DELETE')
                         
@@ -127,7 +127,7 @@
                         
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <a href="{{ route('admin.specialties.show', $specialty) }}" class="btn btn-secondary">
+                                <a href="{{ route('admin.specialty.show', $specialty) }}" class="btn btn-secondary">
                                     <i class="bi bi-x-circle"></i> إلغاء والعودة
                                 </a>
                             </div>

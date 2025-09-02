@@ -71,6 +71,7 @@ public function publicIndex(Request $request)
             return redirect()->route('admin.specialties.index')
                 ->with('success', 'تم إنشاء التخصص بنجاح.');
         } catch (\Exception $e) {
+
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء إنشاء التخصص: ' . $e->getMessage());
@@ -108,10 +109,10 @@ public function publicIndex(Request $request)
     {
         try {
             $validated = $this->validateSpecialtyData($request, $specialty->id);
-            
+
             $this->specialtyService->updateSpecialty($specialty, $validated);
-            
-            return redirect()->route('admin.specialties.show', $specialty)
+
+            return redirect()->route('admin.specialty.show', $specialty)
                 ->with('success', 'تم تحديث بيانات التخصص بنجاح.');
         } catch (\Exception $e) {
             return redirect()->back()

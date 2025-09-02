@@ -15,7 +15,7 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" 
-                          action="{{ isset($specialty) ? route('admin.specialties.update', $specialty) : route('admin.specialties.store') }}" 
+                          action="{{ isset($specialty) ? route('admin.specialty.update', $specialty) : route('admin.specialty.store') }}" 
                           enctype="multipart/form-data">
                         @csrf
                         @if(isset($specialty))
