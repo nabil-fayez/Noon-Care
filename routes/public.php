@@ -9,4 +9,4 @@ Route::get(
     }
 )->name('welcome');
 
-
+Route::get('/specialties', [SpecialtyController::class, 'publicIndex'])->name('specialties.index');

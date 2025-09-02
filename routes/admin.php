@@ -27,12 +27,18 @@ Route::middleware('user.type:admin')->group(function () {
     Route::match(['get', 'post'], '/logout', [AdminController::class, 'logout'])->name('admin.logout');
 
     // Specialties Management
-    Route::get('/specialties/{page?}', [SpecialtyController::class, 'index'])->name('admin.specialties.index');
-    Route::match(['get', 'post'], '/specialty/create', [SpecialtyController::class, 'create'])->name('admin.specialty.create');
-    Route::get('/specialty/show/{id}', [SpecialtyController::class, 'show'])->name('admin.specialty.show');
-    Route::match(['get', 'put'], '/specialty/update/{id}', [SpecialtyController::class, 'update'])->name('admin.specialty.update');
-    Route::match(['get', 'delete'], '/specialty/delete/{id}', [SpecialtyController::class, 'delete'])->name('admin.specialty.delete');
+Route::get('/specialties', [SpecialtyController::class, 'index'])->name('admin.specialties.index');
+    Route::get('/specialty/create', [SpecialtyController::class, 'create'])->name('admin.specialty.create');
+    Route::post('/specialty/store', [SpecialtyController::class, 'store'])->name('admin.specialty.store');
+    Route::get('/specialty/{specialty}/show', [SpecialtyController::class, 'show'])->name('admin.specialty.show');
+    Route::get('/specialty/{specialty}/edit', [SpecialtyController::class, 'edit'])->name('admin.specialty.edit');
+    Route::put('/specialty/{specialty}/update', [SpecialtyController::class, 'update'])->name('admin.specialty.update');
+    Route::get('/specialty/{specialty}/delete', [SpecialtyController::class, 'delete'])->name('admin.specialty.delete');
+    Route::delete('/specialty/{specialty}/destroy', [SpecialtyController::class, 'destroy'])->name('admin.specialty.destroy');
+    Route::post('/specialty/{specialty}/toggle-status', [SpecialtyController::class, 'toggleStatus'])->name('admin.specialty.toggleStatus');
 
+
+    // End Specialties Management
     // Doctors Management Routes
     Route::get('/doctors/{per_page?}', [DoctorController::class, 'index'])->name('admin.doctors.index');
     Route::get('/doctors/trashed/{per_page?}', [DoctorController::class, 'trashed'])->name('admin.doctors.trashed');
