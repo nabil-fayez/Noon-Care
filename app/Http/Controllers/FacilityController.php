@@ -2,183 +2,265 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\Facility;
+use App\Models\Doctor;
 use App\Models\Service;
-use App\Models\InsuranceCompany;
-use App\Services\FacilityService;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class FacilityController extends Controller
 {
-    protected $facilityService;
-
-    public function __construct(FacilityService $facilityService)
-    {
-        $this->facilityService = $facilityService;
-    }
-
+    /**
+     * عرض قائمة المنشآت الطبية
+     */
     public function index(Request $request)
     {
-        $query = Facility::with(['services', 'doctors']);
-
-        // التصفية حسب التخصص
-        if ($request->has('specialty_id')) {
-            $query->whereHas('doctors.specialties', function ($q) use ($request) {
-                $q->where('specialties.id', $request->specialty_id);
-            });
-        }
-
-        // التصفية حسب الخدمة
-        if ($request->has('service_id')) {
-            $query->whereHas('services', function ($q) use ($request) {
-                $q->where('services.id', $request->service_id);
-            });
-        }
-
-        // التصفية حسب الموقع
-        if ($request->has('latitude') && $request->has('longitude')) {
-            $latitude = $request->latitude;
-            $longitude = $request->longitude;
-            $radius = $request->radius ?? 10; // نصف قطر افتراضي 10 كم
-
-            $query->selectRaw("*, (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance", [$latitude, $longitude, $latitude])
-                ->having('distance', '<=', $radius)
-                ->orderBy('distance');
-        } else {
-            $query->orderBy('business_name');
-        }
-
-        $facilities = $request->has('per_page')
-            ? $query->paginate($request->per_page)
-            : $query->get();
+        $facilities = Facility::withCount(['doctors', 'services', 'appointments'])
+            ->when($request->has('search'), function ($query) use ($request) {
+                return $query->search($request->search);
+            })
+            ->when($request->has('status'), function ($query) use ($request) {
+                if ($request->status == 'active') {
+                    return $query->active();
+                } elseif ($request->status == 'inactive') {
+                    return $query->where('is_active', false);
+                }
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
 
         return view('admin.facilities.index', compact('facilities'));
     }
 
+    /**
+     * عرض نموذج إنشاء منشأة جديدة
+     */
+    public function create()
+    {
+        return view('admin.facilities.create');
+    }
+
+    /**
+     * حفظ المنشأة الجديدة
+     */
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|unique:facilities,username|max:50',
+            'email' => 'nullable|email|unique:facilities,email',
+            'password' => 'required|min:8|confirmed',
+            'business_name' => 'required|max:100',
+            'phone' => 'nullable|max:20',
+            'website' => 'nullable|url|max:255',
+            'address' => 'nullable|string',
+            'description' => 'nullable|string',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        try {
+            $data = $request->except('password_confirmation', 'logo');
+            $data['password'] = Hash::make($request->password);
+            $data['is_active'] = $request->has('is_active');
+
+            if ($request->hasFile('logo')) {
+                $logoPath = $request->file('logo')->store('facilities/logos', 'public');
+                $data['logo'] = $logoPath;
+            }
+
+            Facility::create($data);
+
+            return redirect()->route('admin.facilities.index')
+                ->with('success', 'تم إنشاء المنشأة بنجاح.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'حدث خطأ أثناء إنشاء المنشأة: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    /**
+     * عرض تفاصيل المنشأة
+     */
     public function show(Facility $facility)
     {
-        $facility->load([
-            'services',
-            'doctors.specialties',
-            'doctors.workingHours' => function ($query) use ($facility) {
-                $query->where('facility_id', $facility->id);
-            }
-        ]);
+        $facility->loadCount(['doctors', 'services', 'appointments'])
+            ->load('doctors.specialties');
 
         return view('admin.facilities.show', compact('facility'));
     }
 
-    public function getAvailableSlots(Facility $facility, Request $request): JsonResponse
+    /**
+     * عرض نموذج تعديل المنشأة
+     */
+    public function edit(Facility $facility)
     {
-        $request->validate([
-            'doctor_id' => 'required|exists:doctors,id',
-            'date' => 'required|date|after:today'
+        return view('admin.facilities.update', compact('facility'));
+    }
+
+    /**
+     * تحديث بيانات المنشأة
+     */
+    public function update(Request $request, Facility $facility)
+    {
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|max:50|unique:facilities,username,' . $facility->id,
+            'email' => 'nullable|email|unique:facilities,email,' . $facility->id,
+            'password' => 'nullable|min:8|confirmed',
+            'business_name' => 'required|max:100',
+            'phone' => 'nullable|max:20',
+            'website' => 'nullable|url|max:255',
+            'address' => 'nullable|string',
+            'description' => 'nullable|string',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'is_active' => 'boolean',
+            'remove_logo' => 'boolean',
         ]);
 
-        $slots = $this->facilityService->getAvailableTimeSlots(
-            $facility,
-            $request->doctor_id,
-            \Carbon\Carbon::parse($request->date)
-        );
-
-        return response()->json(['slots' => $slots]);
-    }
-
-    public function updatePricing(Facility $facility, Request $request): JsonResponse
-    {
-        $request->validate([
-            'pricings' => 'required|array',
-            'pricings.*.service_id' => 'required|exists:services,id',
-            'pricings.*.price' => 'required|numeric|min:0',
-            'pricings.*.insurance_company_id' => 'nullable|exists:insurance_companies,id'
-        ]);
-
-        $this->facilityService->updateServicePricing($facility, $request->pricings);
-
-        return response()->json(['message' => 'تم تحديث الأسعار بنجاح']);
-    }
-
-    public function create(Request $request)
-    {
-        if ($request->isMethod('post')) {
-            $validated = $request->validate([
-                'username' => 'required|string|max:255|unique:facilities,username',
-                'business_name' => 'required|string|max:255|unique:facilities,business_name',
-                'email' => 'required|email|unique:facilities,email',
-                'phone' => 'required|string|unique:facilities,phone',
-                'address' => 'required|string|max:255',
-                'password' => 'required|string|min:8|confirmed',
-                'type' => 'required',
-            ]);
-
-            $facility = new Facility();
-            $facility->username = $validated['username'];
-            $facility->business_name = $validated['business_name'];
-            $facility->email = $validated['email'];
-            $facility->phone = $validated['phone'];
-            $facility->address = $validated['address'];
-            $facility->password = bcrypt($validated['password']);
-            $facility->type = $validated['type'];
-
-            $facility->save();
-
-            return redirect()->route('admin.facilities.index')->with('success', 'facility created successfully');
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
         }
-        return view('admin.facilities.create');
-    }
 
-    public function update(Request $request, $id)
-    {
-        $facility = Facility::find($id);
-        if (!$facility) {
-            return response()->json(['message' => 'facility not found'], 404);
-        }
-        if ($request->isMethod('put')) {
-            $validated = $request->validate([
-                'business_name' => 'required|string|max:255|unique:facilities,business_name,' . $facility->id,
-                'phone' => 'required|string|unique:facilities,phone,' . $facility->id,
-                'address' => 'required|string|max:255',
-                'type' => 'required',
-            ]);
-            $facility->update($validated);
-            return redirect()->route('admin.facilities.index')->with('success', 'facility updated successfully');
-        }
-        return view('admin.facilities.update', ['facility' => $facility]);
-    }
-    public function delete(Request $request, $id)
-    {
-        if ($request->isMethod('delete')) {
-            $facility = Facility::find($id);
-            if (!$facility) {
-                return $this->respondWithError('facility not found', 404);
+        try {
+            $data = $request->except('password_confirmation', 'logo', 'remove_logo');
+            $data['is_active'] = $request->has('is_active');
+
+            if ($request->has('remove_logo') && $facility->logo) {
+                Storage::disk('public')->delete($facility->logo);
+                $data['logo'] = null;
             }
-            $facility->delete();
-            return redirect()->route('admin.facilities.index')->with('success', 'Doctor deleted successfully');
+
+            if ($request->hasFile('logo')) {
+                // حذف الشعار القديم إذا موجود
+                if ($facility->logo) {
+                    Storage::disk('public')->delete($facility->logo);
+                }
+                $logoPath = $request->file('logo')->store('facilities/logos', 'public');
+                $data['logo'] = $logoPath;
+            }
+
+            if ($request->filled('password')) {
+                $data['password'] = Hash::make($request->password);
+            } else {
+                unset($data['password']);
+            }
+
+            $facility->update($data);
+
+            return redirect()->route('admin.facility.show', $facility)
+                ->with('success', 'تم تحديث بيانات المنشأة بنجاح.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'حدث خطأ أثناء تحديث المنشأة: ' . $e->getMessage())
+                ->withInput();
         }
-        $facility = Facility::find($id);
-        if (!$facility) {
-            return $this->respondWithError('Doctor not found', 404);
-        }
+    }
+
+    /**
+     * عرض نموذج تأكيد الحذف
+     */
+    public function delete(Facility $facility)
+    {
         return view('admin.facilities.delete', compact('facility'));
     }
 
-    public function restore($id)
+    /**
+     * حذف المنشأة (Soft Delete)
+     */
+    public function destroy(Request $request, Facility $facility)
     {
-        $facility = Facility::withTrashed()->find($id);
-        if (!$facility) {
-            return $this->respondWithError('facility not found', 404);
+        $validator = Validator::make($request->all(), [
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
         }
-        $facility->restore();
-        return redirect()->route('admin.facilities.index')->with('success', 'facility restored successfully');
+
+        try {
+            // يمكنك هنا تسجيل سبب الحذف إذا أردت
+            $facility->delete();
+
+            return redirect()->route('admin.facilities.index')
+                ->with('success', 'تم حذف المنشأة بنجاح.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'حدث خطأ أثناء حذف المنشأة: ' . $e->getMessage());
+        }
     }
-    public function destroy($id)
+
+    /**
+     * تغيير حالة المنشأة (تفعيل/تعطيل)
+     */
+    public function toggleStatus(Facility $facility)
     {
-        $facility = Facility::withTrashed()->find($id);
-        if (!$facility) {
-            return $this->respondWithError('Facility not found', 404);
+        try {
+            $facility->update(['is_active' => !$facility->is_active]);
+
+            $message = $facility->is_active
+                ? 'تم تفعيل المنشأة بنجاح.'
+                : 'تم تعطيل المنشأة بنجاح.';
+
+            return redirect()->back()
+                ->with('success', $message);
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'حدث خطأ أثناء تغيير حالة المنشأة: ' . $e->getMessage());
         }
-        $facility->forceDelete();
-        return redirect()->route('admin.facilities.index')->with('success', 'facility permanently deleted');
+    }
+
+    /**
+     * عرض قائمة الأطباء في المنشأة
+     */
+    public function doctors(Facility $facility)
+    {
+        $doctors = $facility->doctors()
+            ->with('specialties')
+            ->withPivot('status', 'available_for_appointments')
+            ->paginate(10);
+
+        return view('admin.facilities.doctors', compact('facility', 'doctors'));
+    }
+
+    /**
+     * عرض قائمة الخدمات في المنشأة
+     */
+    public function services(Facility $facility)
+    {
+        $services = $facility->services()
+            ->withPivot('is_available')
+            ->paginate(10);
+
+        return view('admin.facilities.services', compact('facility', 'services'));
+    }
+
+    /**
+     * عرض مواعيد المنشأة
+     */
+    public function appointments(Facility $facility)
+    {
+        $appointments = $facility->appointments()
+            ->with(['patient', 'doctor', 'service'])
+            ->orderBy('appointment_datetime', 'desc')
+            ->paginate(10);
+
+        return view('admin.facilities.appointments', compact('facility', 'appointments'));
     }
 }

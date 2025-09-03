@@ -70,13 +70,18 @@ Route::middleware('user.type:admin')->group(function () {
     // End Patients Management
 
     // Facilities Management
-    Route::get('/facilities/{page?}', [FacilityController::class, 'index'])->name('admin.facilities.index');
-    Route::match(['get', 'post'], '/facility/create', [FacilityController::class, 'create'])->name('admin.facility.create');
-    Route::get('/facility/show/{id}', [FacilityController::class, 'show'])->name('admin.facility.show');
-    Route::match(['get', 'put'], '/facility/update/{id}', [FacilityController::class, 'update'])->name('admin.facility.update');
-    Route::match(['get', 'delete'], '/facility/delete/{id}', [FacilityController::class, 'delete'])->name('admin.facility.delete');
-    Route::get('/facility/restore/{id}', [FacilityController::class, 'restore'])->name('admin.facility.restore');
-    Route::get('/facility/destroy/{id}', [FacilityController::class, 'destroy'])->name('admin.facility.destroy');
+    Route::get('/facilities', [FacilityController::class, 'index'])->name('admin.facilities.index');
+    Route::get('/facility/create', [FacilityController::class, 'create'])->name('admin.facility.create');
+    Route::post('/facility/store', [FacilityController::class, 'store'])->name('admin.facility.store');
+    Route::get('/facility/{facility}/show', [FacilityController::class, 'show'])->name('admin.facility.show');
+    Route::get('/facility/{facility}/edit', [FacilityController::class, 'edit'])->name('admin.facility.edit');
+    Route::put('/facility/{facility}/update', [FacilityController::class, 'update'])->name('admin.facility.update');
+    Route::get('/facility/{facility}/delete', [FacilityController::class, 'delete'])->name('admin.facility.delete');
+    Route::delete('/facility/{facility}/destroy', [FacilityController::class, 'destroy'])->name('admin.facility.destroy');
+    Route::post('/facility/{facility}/toggle-status', [FacilityController::class, 'toggleStatus'])->name('admin.facility.toggleStatus');
+    Route::get('/facility/{facility}/doctors', [FacilityController::class, 'doctors'])->name('admin.facility.doctors');
+    Route::get('/facility/{facility}/services', [FacilityController::class, 'services'])->name('admin.facility.services');
+    Route::get('/facility/{facility}/appointments', [FacilityController::class, 'appointments'])->name('admin.facility.appointments');
 
     // Medical Records Management
     Route::get('/medical-records', [MedicalRecordController::class, 'index'])->name('admin.medical_records.index');

@@ -2,92 +2,84 @@
 
 namespace App\Services;
 
-use App\Models\Appointment;
 use App\Models\Facility;
-use App\Models\Service;
-use App\Models\InsuranceCompany;
-use App\Models\WorkingHour;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
 
 class FacilityService
 {
-    public function createFacility(array $data): Facility
+    /**
+     * إنشاء منشأة جديدة
+     */
+    public function createFacility(array $data)
     {
-        return DB::transaction(function () use ($data) {
-            $facility = Facility::create($data);
+        $data['password'] = Hash::make($data['password']);
+        $data['is_active'] = isset($data['is_active']);
 
-            // إضافة الخدمات الافتراضية للمنشأة
-            $this->addDefaultServices($facility);
+        if (isset($data['logo'])) {
+            $data['logo'] = $data['logo']->store('facilities/logos', 'public');
+        }
 
-            return $facility;
-        });
+        return Facility::create($data);
     }
 
-    public function updateServicePricing(Facility $facility, array $pricingData): void
+    /**
+     * تحديث بيانات المنشأة
+     */
+    public function updateFacility(Facility $facility, array $data)
     {
-        DB::transaction(function () use ($facility, $pricingData) {
-            foreach ($pricingData as $servicePricing) {
-                $facility->servicePricings()->updateOrCreate(
-                    [
-                        'service_id' => $servicePricing['service_id'],
-                        'insurance_company_id' => $servicePricing['insurance_company_id'] ?? null
-                    ],
-                    [
-                        'price' => $servicePricing['price'],
-                        'is_active' => $servicePricing['is_active'] ?? true
-                    ]
-                );
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']);
+        }
+
+        $data['is_active'] = isset($data['is_active']);
+
+        if (isset($data['remove_logo']) && $data['remove_logo'] && $facility->logo) {
+            Storage::disk('public')->delete($facility->logo);
+            $data['logo'] = null;
+        }
+
+        if (isset($data['logo'])) {
+            // حذف الشعار القديم إذا موجود
+            if ($facility->logo) {
+                Storage::disk('public')->delete($facility->logo);
             }
-        });
-    }
-
-    private function addDefaultServices(Facility $facility): void
-    {
-        $defaultServices = Service::where('is_default', true)->get();
-
-        foreach ($defaultServices as $service) {
-            $facility->services()->attach($service->id, ['is_available' => true]);
-        }
-    }
-
-    public function getAvailableTimeSlots(Facility $facility, $doctorId, $date): array
-    {
-        // الحصول على أوقات العمل للطبيب في المنشأة
-        $workingHours = WorkingHour::where('facility_id', $facility->id)
-            ->where('doctor_id', $doctorId)
-            ->where('day_of_week', strtoupper(substr($date->format('D'), 0, 3)))
-            ->where('is_available', true)
-            ->first();
-
-        if (!$workingHours) {
-            return [];
+            $data['logo'] = $data['logo']->store('facilities/logos', 'public');
         }
 
-        // الحصول على المواعيد المحجوزة
-        $bookedAppointments = Appointment::where('facility_id', $facility->id)
-            ->where('doctor_id', $doctorId)
-            ->whereDate('appointment_datetime', $date)
-            ->whereIn('status', ['new', 'confirmed'])
-            ->pluck('appointment_datetime')
-            ->map(function ($datetime) {
-                return $datetime->format('H:i');
-            })
-            ->toArray();
+        return $facility->update($data);
+    }
 
-        // توليد الأوقات المتاحة
-        $availableSlots = [];
-        $startTime = \Carbon\Carbon::parse($workingHours->start_time);
-        $endTime = \Carbon\Carbon::parse($workingHours->end_time);
-        $slotDuration = $workingHours->slot_duration;
+    /**
+     * حذف المنشأة
+     */
+    public function deleteFacility(Facility $facility)
+    {
+        if ($facility->logo) {
+            Storage::disk('public')->delete($facility->logo);
+        }
 
-        while ($startTime->addMinutes($slotDuration) <= $endTime) {
-            $timeSlot = $startTime->format('H:i');
+        return $facility->delete();
+    }
 
-            if (!in_array($timeSlot, $bookedAppointments)) {
-                $availableSlots[] = $timeSlot;
+    /**
+     * البحث عن المنشآت
+     */
+    public function searchFacilities($searchTerm, $status = null)
+    {
+        $query = Facility::withCount(['doctors', 'services', 'appointments'])
+            ->search($searchTerm);
+
+        if ($status) {
+            if ($status == 'active') {
+                $query->active();
+            } elseif ($status == 'inactive') {
+                $query->where('is_active', false);
             }
         }
 
-        return $availableSlots;
+        return $query->orderBy('created_at', 'desc')->paginate(10);
     }
 }

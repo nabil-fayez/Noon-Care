@@ -2,44 +2,157 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class Facility extends Model
+class Facility extends Authenticatable
 {
+    use HasFactory, Notifiable;
 
-    protected $table = 'facilities';
     protected $guard = 'facility';
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'username',
+        'email',
+        'password',
         'business_name',
         'address',
         'phone',
+        'website',
+        'description',
+        'logo',
+        'latitude',
+        'longitude',
+        'is_active',
     ];
 
-    protected $dates = ['created_at', 'updated_at'];
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'is_active' => 'boolean',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
+    ];
+
+    /**
+     * العلاقة مع الأطباء (Many-to-Many)
+     */
     public function doctors()
     {
         return $this->belongsToMany(Doctor::class, 'doctor_facility')
-            ->withPivot('consultation_price');
+            ->withPivot('status', 'available_for_appointments')
+            ->withTimestamps();
     }
 
+    /**
+     * العلاقة مع الخدمات (Many-to-Many)
+     */
+    public function services()
+    {
+        return $this->belongsToMany(Service::class, 'facility_services')
+            ->withPivot('is_available')
+            ->withTimestamps();
+    }
+
+    /**
+     * العلاقة مع المواعيد
+     */
     public function appointments()
     {
         return $this->hasMany(Appointment::class);
     }
 
-    public function workingHours()
-    {
-        return $this->hasMany(WorkingHour::class);
-    }
-    public function medicalRecords(): HasMany
+    /**
+     * العلاقة مع السجلات الطبية
+     */
+    public function medicalRecords()
     {
         return $this->hasMany(MedicalRecord::class);
     }
+
+    /**
+     * العلاقة مع تقييمات المنشأة
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * العلاقة مع أسعار الخدمات
+     */
+    public function servicePricing()
+    {
+        return $this->hasMany(FacilityServicePricing::class);
+    }
+
+    /**
+     * الوصول إلى صورة الشعار (Accessor)
+     */
+    public function getLogoUrlAttribute()
+    {
+        if ($this->logo) {
+            return asset('storage/' . $this->logo);
+        }
+        return 'https://via.placeholder.com/150';
+    }
+
+    /**
+     * عدد الأطباء النشطين (Accessor)
+     */
+    public function getActiveDoctorsCountAttribute()
+    {
+        return $this->doctors()->wherePivot('status', 'active')->count();
+    }
+
+    /**
+     * عدد الخدمات المتاحة (Accessor)
+     */
+    public function getAvailableServicesCountAttribute()
+    {
+        return $this->services()->wherePivot('is_available', true)->count();
+    }
+
+    /**
+     * نطاق الاستعلام للمنشآت النشطة
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * نطاق الاستعلام للبحث بالاسم أو العنوان
+     */
+    public function scopeSearch($query, $search)
+    {
+        return $query->where('business_name', 'like', "%{$search}%")
+            ->orWhere('address', 'like', "%{$search}%");
+    }
+
     public function getGaurdAttribute()
     {
         return 'facility';

@@ -14,24 +14,6 @@
     <div class="container py-4">
         <header class="mb-4">
             <h1 class="mb-3">Admin Dashboard</h1>
-            <nav>
-                <ul class="nav nav-pills">
-                    <li class="nav-item"><a class="nav-link" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ route('admin.doctors.index') }}">Doctors</a></li>
-                    <li class="nav-item"><a class="nav-link"
-                            href="{{ route('admin.specialties.index') }}">Specialties</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ route('admin.patients.index') }}">Patients</a>
-                    </li>
-                    <li class="nav-item"><a class="nav-link" href="{{ route('admin.facilities.index') }}">Facilities</a>
-                    </li>
-                    <li class="nav-item"><a class="nav-link"
-                            href="{{ route('admin.appointments.index') }}">Appointments</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ route('admin.reports.bookings') }}">Reports</a>
-                    </li>
-                    <li class="nav-item"><a class="nav-link" href="{{ route('admin.logout') }}">Logout</a>
-                    </li>
-                </ul>
-            </nav>
         </header>
 
         <main>

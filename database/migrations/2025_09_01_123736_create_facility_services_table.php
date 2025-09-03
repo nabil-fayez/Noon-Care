@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('service_id')->constrained()->onDelete('cascade');
             $table->boolean('is_available')->default(true);
             $table->timestamps();
-            
+
             $table->unique(['facility_id', 'service_id']);
         });
     }
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->dropForeign(['facility_id']);
             $table->dropForeign(['service_id']);
         });
-        
+
         Schema::dropIfExists('facility_services');
     }
 };
