@@ -22,6 +22,7 @@ class AppointmentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([]);
+        dd('add data vildation roles');
         $doctorId = Doctor::where('username', '=', $validated['doctor_username'])->id();
         $patientId = Auth::guard('patient')->user()->id();
         $facilityId = Facility::where('username', '=', $validated['facility_username'])->id();

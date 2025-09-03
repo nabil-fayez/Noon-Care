@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Facility extends Model
 {
 
     protected $table = 'facilities';
+    protected $guard = 'facility';
 
     protected $fillable = [
         'username',
@@ -33,5 +35,13 @@ class Facility extends Model
     public function workingHours()
     {
         return $this->hasMany(WorkingHour::class);
+    }
+    public function medicalRecords(): HasMany
+    {
+        return $this->hasMany(MedicalRecord::class);
+    }
+    public function getGaurdAttribute()
+    {
+        return 'facility';
     }
 }

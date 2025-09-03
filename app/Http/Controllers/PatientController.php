@@ -2,153 +2,319 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\Appointment;
+use App\Models\Doctor;
+use App\Models\Facility;
 use App\Models\Patient;
+use App\Services\PatientService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Hash;
+use App\Policies\PatientPolicy;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class PatientController extends Controller
 {
-    public function dashboard()
+    protected $patientService;
+    protected $notificationService;
+
+    public function __construct(PatientService $patientService, NotificationService $notificationService)
     {
-        $user = Auth::guard('patient')->user();
+        $this->patientService = $patientService;
+        $this->notificationService = $notificationService;
 
-        $upcomingAppointments = Appointment::where('patient_id', $user->id)
-            ->where('status', 'confirmed')
-            ->where('appointment_datetime', '>', now())
-            ->count();
-
-        $completedAppointments = Appointment::where('patient_id', $user->id)
-            ->where('status', 'done')
-            ->count();
-
-        $reviewsCount = $user->reviews()->count();
-
-        $recentAppointments = Appointment::with('doctor')
-            ->where('patient_id', $user->id)
-            ->where('appointment_datetime', '>', now())
-            ->orderBy('appointment_datetime')
-            ->take(5)
-            ->get();
-
-        return view('patient.dashboard', compact(
-            'upcomingAppointments',
-            'completedAppointments',
-            'reviewsCount',
-            'recentAppointments'
-        ));
-    }
-    public function appointments()
-    {
-        $appointments = Appointment::with(['doctor', 'facility'])
-            ->where('patient_id', auth('patient')->id())
-            ->orderBy('appointment_datetime', 'desc')
-            ->paginate(10);
-
-        return view('patient.appointments.index', compact('appointments'));
+        // استخدام الـ guards للتحقق من المصادقة
+        $this->middleware('auth:admin,patient');
     }
 
+    /**
+     * عرض قائمة المرضى
+     */
     public function index(Request $request)
     {
-        $perPage = 10;
-        $total = Patient::count();
-        $pages = ceil($total / $perPage);
-        $offset = ($request->page - 1) * $perPage;
-
-        $patients = Patient::skip($offset)->take($perPage)->withTrashed()->get();
-
-        return view('admin.patients.index', [
-            'patients' => $patients,
-            'pages' => $pages,
-            'currentPage' => $request->page ?? 1
-        ]);
-    }
-    public function create(Request $request)
-    {
-        if ($request->isMethod('post')) {
-            $validated = $request->validate([
-                'username' => 'required|string|max:255|unique:patients,username',
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'email' => 'required|email|unique:patients,email',
-                'password' => 'required|string|min:8|confirmed',
-            ]);
-
-            $doctor = new Patient();
-            $doctor->username = $validated['username'];
-            $doctor->first_name = $validated['first_name'];
-            $doctor->last_name = $validated['last_name'];
-            $doctor->email = $validated['email'];
-            $doctor->password = bcrypt($validated['password']);
-            $doctor->save();
-
-            return redirect()->route('admin.patients.index')->with('success', 'Doctor created successfully');
+        // التحقق من الصلاحية باستخدام السياسة
+        if (!Gate::allows('viewAny', Patient::class)) {
+            abort(403, 'Unauthorized');
         }
+
+        try {
+            $perPage = $request->get('per_page', 10);
+            $patients = $this->patientService->getPatients($request->all(), $perPage);
+
+            return view('admin.patients.index', compact('patients'));
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء جلب بيانات المرضى: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * عرض نموذج إنشاء مريض جديد
+     */
+    public function create()
+    {
+        if (!Gate::allows('create', Patient::class)) {
+            abort(403, 'Unauthorized');
+        }
+
         return view('admin.patients.create');
     }
-    public function show($id)
+
+    /**
+     * حفظ مريض جديد
+     */
+    public function store(Request $request)
     {
-        $patient = Patient::find($id);
-        if (!$patient) {
-            return response()->json(['message' => 'Patient not found'], 404);
+        if (!Gate::allows('create', Patient::class)) {
+            abort(403, 'Unauthorized');
         }
-        return view('admin.patients.show', ['patient' => $patient]);
+
+        try {
+            $validated = $this->validatePatientData($request);
+
+            $patient = $this->patientService->createPatient($validated);
+
+            // إرسال إشعار للمسؤول
+            $this->notificationService->sendNotification(
+                1, // افتراضيًا للمسؤول الأول
+                'admin',
+                'مريض جديد',
+                'تم إضافة مريض جديد: ' . $patient->full_name
+            );
+
+            return redirect()->route('admin.patients.index')
+                ->with('success', 'تم إنشاء المريض بنجاح.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء إنشاء المريض: ' . $e->getMessage());
+        }
     }
 
-    public function update(Request $request, $id)
+
+    /**
+     * عرض بيانات مريض
+     */
+    public function show(Patient $patient)
     {
-        $patient = Patient::find($id);
-        if (!$patient) {
-            return response()->json(['message' => 'Patient not found'], 404);
+        if (!Gate::allows('view', $patient)) {
+            abort(403, 'Unauthorized');
         }
-        if ($request->isMethod('put')) {
-            $validated = $request->validate([
-                'username' => 'sometimes|required|string|max:255|unique:patients,username,' . $patient->id,
-                'first_name' => 'sometimes|required|string|max:255',
-                'last_name' => 'sometimes|required|string|max:255',
-                'email' => 'sometimes|required|string|email|max:255|unique:patients,email,' . $patient->id,
-                'password' => 'sometimes|required|string|min:8',
+
+        try {
+            $patient->load([
+                'appointments.doctor',
+                'appointments.facility',
+                'medicalRecords'
             ]);
-            $patient->update($validated);
-            return redirect()->route('admin.patients.index')->with('success', 'Patient updated successfully');
-        }
-        return view('admin.patients.update', ['patient' => $patient]);
-    }
 
-    public function delete(Request $request, $id)
-    {
-        if ($request->isMethod('delete')) {
-            $patient = Patient::find($id);
-            if (!$patient) {
-                return $this->respondWithError('patient not found', 404);
+            // تحديد الـ view بناءً على نوع المستخدم
+            if (Auth::guard('admin')->check()) {
+                return view('admin.patients.show', compact('patient'));
+            } else {
+                return view('patient.show', compact('patient'));
             }
-            $patient->delete();
-            return redirect()->route('admin.patients.index')->with('success', 'Doctor deleted successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء جلب بيانات المريض: ' . $e->getMessage());
         }
-        $patient = Patient::find($id);
-        if (!$patient) {
-            return $this->respondWithError('Doctor not found', 404);
-        }
-        return view('admin.patients.delete', compact('patient'));
     }
 
-    public function restore($id)
+    /**
+     * عرض نموذج تعديل مريض
+     */
+    public function edit(Patient $patient)
     {
-        $patient = Patient::withTrashed()->find($id);
-        if (!$patient) {
-            return $this->respondWithError('Doctor not found', 404);
+        if (!Gate::allows('update', $patient)) {
+            abort(403, 'Unauthorized');
         }
-        $patient->restore();
-        return redirect()->route('admin.patients.index')->with('success', 'patient restored successfully');
+
+        try {
+            if (request()->user()->gaurd == 'admin') {
+                return view("admin.patients.update", compact('patient'));
+            } else {
+                return view("patient.update", compact('patient'));
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء تحميل صفحة التعديل: ' . $e->getMessage());
+        }
     }
-    public function destroy($id)
+
+    /**
+     * تحديث بيانات مريض
+     */
+    public function update(Request $request, Patient $patient)
     {
-        $patient = Patient::withTrashed()->find($id);
-        if (!$patient) {
-            return $this->respondWithError('Doctor not found', 404);
+        if (!Gate::allows('update', $patient)) {
+            abort(403, 'Unauthorized');
         }
-        $patient->forceDelete();
-        return redirect()->route('admin.patients.index')->with('success', 'patient permanently deleted');
+
+        try {
+            $validated = $this->validatePatientData($request, $patient->id);
+
+            $this->patientService->updatePatient($patient, $validated);
+
+            // تحديد route ال redirect بناءً على نوع المستخدم
+            if (Auth::guard('admin')->check()) {
+                return redirect()->route('admin.patient.show', $patient)
+                    ->with('success', 'تم تحديث بيانات المريض بنجاح.');
+            } else {
+                return redirect()->route('patient.profile')
+                    ->with('success', 'تم تحديث بياناتك بنجاح.');
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء تحديث المريض: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * عرض نموذج تأكيد الحذف
+     */
+    public function delete(Patient $patient)
+    {
+        try {
+            return view('admin.patients.delete', compact('patient'));
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء تحميل صفحة الحذف: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * حذف مريض
+     */
+    public function destroy(Patient $patient)
+    {
+        try {
+            $this->patientService->deletePatient($patient);
+
+            return redirect()->route('admin.patients.index')
+                ->with('success', 'تم حذف المريض بنجاح.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء حذف المريض: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * تبديل حالة المريض
+     */
+    public function toggleStatus(Patient $patient)
+    {
+        try {
+            $this->patientService->toggleStatus($patient);
+
+            $status = $patient->is_active ? 'مفعل' : 'معطل';
+            return redirect()->back()->with('success', "تم تغيير حالة المريض إلى: $status");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء تغيير حالة المريض: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * التحقق من صحة بيانات المريض
+     */
+    private function validatePatientData(Request $request, $patientId = null)
+    {
+        $rules = [
+            'username' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('patients')->ignore($patientId)
+            ],
+            'first_name' => 'required|string|max:50',
+            'last_name' => 'required|string|max:50',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('patients')->ignore($patientId)
+            ],
+            'phone' => 'nullable|string|max:15',
+            'date_of_birth' => 'required|date|before:today',
+            'gender' => 'required|in:male,female',
+            'address' => 'nullable|string|max:255',
+            'emergency_contact' => 'nullable|string|max:15',
+            'blood_type' => 'nullable|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ];
+
+        if (!$patientId) {
+            $rules['password'] = 'required|string|min:8|confirmed';
+        } else {
+            $rules['password'] = 'nullable|string|min:8|confirmed';
+        }
+
+        return $request->validate($rules);
+    }
+
+    public function dashboard()
+    {
+        try {
+            $patient = auth()->guard('patient')->user();
+
+            $upcomingAppointments = $patient->appointments()
+                ->where('status', 'confirmed')
+                ->where('appointment_datetime', '>', now())
+                ->count();
+
+            $completedAppointments = $patient->appointments()
+                ->where('status', 'done')
+                ->count();
+
+            $medicalRecordsCount = $patient->medicalRecords()->count();
+
+            $recentAppointments = $patient->appointments()
+                ->with('doctor.specialties')
+                ->where('appointment_datetime', '>', now())
+                ->orderBy('appointment_datetime')
+                ->take(5)
+                ->get();
+
+            $recentMedicalRecords = $patient->medicalRecords()
+                ->with('doctor')
+                ->orderBy('record_date', 'desc')
+                ->take(4)
+                ->get();
+
+            return view('patient.dashboard', compact(
+                'upcomingAppointments',
+                'completedAppointments',
+                'medicalRecordsCount',
+                'recentAppointments',
+                'recentMedicalRecords'
+            ));
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء تحميل لوحة التحكم: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * عرض السجل الطبي للمريض
+     */
+    public function medicalHistory(Request $request, Patient $patient)
+    {
+        try {
+            $medicalRecords = $patient->medicalRecords()
+                ->with('doctor')
+                ->when($request->has('record_type'), function ($query) use ($request) {
+                    return $query->where('record_type', $request->record_type);
+                })
+                ->when($request->has('start_date'), function ($query) use ($request) {
+                    return $query->where('record_date', '>=', $request->start_date);
+                })
+                ->orderBy('record_date', 'desc')
+                ->paginate(10);
+
+            // جلب قائمة الأطباء لإضافتها في الـ modal
+            $doctors = Doctor::where('is_verified', true)->get();
+            $facilities = Facility::where('is_active', true)->get();
+            if (request()->user()->gaurd == 'admin') {
+                return view('admin.patients.medical-history', compact('medicalRecords', 'patient', 'doctors', 'facilities'));
+            } else {
+                return view('patient.medical-history', compact('medicalRecords'));
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء جلب السجل الطبي: ' . $e->getMessage());
+        }
     }
 }

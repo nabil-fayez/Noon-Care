@@ -13,7 +13,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('home') }}">Noon Care</a>
+            <a class="navbar-brand" href="{{ route('welcome') }}">Noon Care</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -21,7 +21,7 @@
                 <ul class="navbar-nav me-auto">
                     @auth
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('dashboard') }}">لوحة التحكم</a>
+                            <a class="nav-link" href="{{ route('patient.dashboard') }}">لوحة التحكم</a>
                         </li>
                         @if (auth()->user()->user_type === 'patient')
                             <li class="nav-item">
@@ -37,12 +37,13 @@
                                 {{ auth()->user()->name }}
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('profile.edit') }}">الملف الشخصي</a></li>
+                                <li><a class="dropdown-item" href="{{ route('patient.profile.edit') }}">الملف الشخصي</a>
+                                </li>
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>
                                 <li>
-                                    <form method="POST" action="{{ route('logout') }}">
+                                    <form method="POST" action="{{ route('patient.logout') }}">
                                         @csrf
                                         <button type="submit" class="dropdown-item">تسجيل الخروج</button>
                                     </form>
@@ -51,10 +52,10 @@
                         </li>
                     @else
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('login') }}">تسجيل الدخول</a>
+                            <a class="nav-link" href="{{ route('patient.login') }}">تسجيل الدخول</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('register') }}">إنشاء حساب</a>
+                            <a class="nav-link" href="{{ route('patient.register') }}">إنشاء حساب</a>
                         </li>
                     @endauth
                 </ul>

@@ -29,4 +29,9 @@ class Admin extends Authenticatable
     {
         return $this->hasMany(AdminLog::class, 'admin_id');
     }
+
+    public function getGaurdAttribute()
+    {
+        return 'admin';
+    }
 }

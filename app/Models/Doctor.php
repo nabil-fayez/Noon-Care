@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Storage;
 
 class Doctor extends Model
 {
+
+    protected $guard = 'doctor';
+
     protected $fillable = [
         'username',
         'first_name',
@@ -135,5 +138,14 @@ class Doctor extends Model
     public function facilitiesCount(): BelongsToMany
     {
         return $this->belongsToMany(Facility::class, 'doctor_facility');
+    }
+
+    public function medicalRecords(): HasMany
+    {
+        return $this->hasMany(MedicalRecord::class);
+    }
+    public function getGaurdAttribute()
+    {
+        return 'doctor';
     }
 }

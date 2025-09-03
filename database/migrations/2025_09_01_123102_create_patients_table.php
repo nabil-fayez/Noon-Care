@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('phone', 15)->nullable();
             $table->date('date_of_birth')->nullable();
             $table->enum('gender', ['male', 'female'])->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

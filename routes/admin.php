@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\FacilityController;
+use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\SpecialtyController;
 use Illuminate\Support\Facades\Route;
@@ -27,7 +28,7 @@ Route::middleware('user.type:admin')->group(function () {
     Route::match(['get', 'post'], '/logout', [AdminController::class, 'logout'])->name('admin.logout');
 
     // Specialties Management
-Route::get('/specialties', [SpecialtyController::class, 'index'])->name('admin.specialties.index');
+    Route::get('/specialties', [SpecialtyController::class, 'index'])->name('admin.specialties.index');
     Route::get('/specialty/create', [SpecialtyController::class, 'create'])->name('admin.specialty.create');
     Route::post('/specialty/store', [SpecialtyController::class, 'store'])->name('admin.specialty.store');
     Route::get('/specialty/{specialty}/show', [SpecialtyController::class, 'show'])->name('admin.specialty.show');
@@ -56,13 +57,17 @@ Route::get('/specialties', [SpecialtyController::class, 'index'])->name('admin.s
     // End Doctors Management Routes
 
     // Patients Management
-    Route::get('/patients/{page?}', [PatientController::class, 'index'])->name('admin.patients.index');
-    Route::match(['get', 'post'], '/patient/create', [PatientController::class, 'create'])->name('admin.patient.create');
-    Route::get('/patient/show/{id}', [PatientController::class, 'show'])->name('admin.patient.show');
-    Route::match(['get', 'put'], '/patient/update/{id}', [PatientController::class, 'update'])->name('admin.patient.update');
-    Route::match(['get', 'delete'], '/patient/delete/{id}', [PatientController::class, 'delete'])->name('admin.patient.delete');
-    Route::get('/patient/restore/{id}', [PatientController::class, 'restore'])->name('admin.patient.restore');
-    Route::get('/patient/destroy/{id}', [PatientController::class, 'destroy'])->name('admin.patient.destroy');
+    Route::get('/patients', [PatientController::class, 'index'])->name('admin.patients.index');
+    Route::get('/patient/create', [PatientController::class, 'create'])->name('admin.patient.create');
+    Route::post('/patient/store', [PatientController::class, 'store'])->name('admin.patient.store');
+    Route::get('/patient/{patient}/show', [PatientController::class, 'show'])->name('admin.patient.show');
+    Route::get('/patient/{patient}/edit', [PatientController::class, 'edit'])->name('admin.patient.edit');
+    Route::put('/patient/{patient}/update', [PatientController::class, 'update'])->name('admin.patient.update');
+    Route::get('/patient/{patient}/delete', [PatientController::class, 'delete'])->name('admin.patient.delete');
+    Route::delete('/patient/{patient}/destroy', [PatientController::class, 'destroy'])->name('admin.patient.destroy');
+    Route::post('/patient/{patient}/toggle-status', [PatientController::class, 'toggleStatus'])->name('admin.patient.toggleStatus');
+    Route::get('/patient/{patient}/medical-history', [PatientController::class, 'medicalHistory'])->name('admin.patient.medicalHistory');
+    // End Patients Management
 
     // Facilities Management
     Route::get('/facilities/{page?}', [FacilityController::class, 'index'])->name('admin.facilities.index');
@@ -73,9 +78,16 @@ Route::get('/specialties', [SpecialtyController::class, 'index'])->name('admin.s
     Route::get('/facility/restore/{id}', [FacilityController::class, 'restore'])->name('admin.facility.restore');
     Route::get('/facility/destroy/{id}', [FacilityController::class, 'destroy'])->name('admin.facility.destroy');
 
-    //
-
-
+    // Medical Records Management
+    Route::get('/medical-records', [MedicalRecordController::class, 'index'])->name('admin.medical_records.index');
+    Route::get('/medical-record/create', [MedicalRecordController::class, 'create'])->name('admin.medical_record.create');
+    Route::post('/medical-record/store', [MedicalRecordController::class, 'store'])->name('admin.medical_record.store');
+    Route::get('/medical-record/{medicalRecord}/show', [MedicalRecordController::class, 'show'])->name('admin.medical_record.show');
+    Route::get('/medical-record/{medicalRecord}/edit', [MedicalRecordController::class, 'edit'])->name('admin.medical_record.edit');
+    Route::put('/medical-record/{medicalRecord}/update', [MedicalRecordController::class, 'update'])->name('admin.medical_record.update');
+    Route::delete('/medical-record/{medicalRecord}/destroy', [MedicalRecordController::class, 'destroy'])->name('admin.medical_record.destroy');
+    Route::get('/patient/{patient}/medical-records/print', [MedicalRecordController::class, 'patientRecords'])->name('admin.medical_record.patient');
+    // End Medical Records Management
 
     Route::get('/appointments', function () {
         return view('admin.appointments.index');

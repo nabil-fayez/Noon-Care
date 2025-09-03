@@ -46,6 +46,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/app.js') }}"></script>
     @stack('scripts')
+    <script>
+        document.querySelectorAll('[title]').forEach(el => {
+            el.textContent = el.title;
+        });
+    </script>
 </body>
 
 </html>
