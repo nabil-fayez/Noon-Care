@@ -5,7 +5,9 @@
 @section('content')
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-12">
+            @include('admin.partials.sidebar')
+
+            <div class="col-md-10">
                 <!-- رسائل التنبيه -->
                 @if (session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -403,32 +405,32 @@
             </div>
 
             ${record.description ? `
-                                                                                                                                                                <div class="mb-3">
-                                                                                                                                                                    <strong>الوصف:</strong>
-                                                                                                                                                                    <p>${record.description}</p>
-                                                                                                                                                                </div>
-                                                                                                                                                                ` : ''}
+                                                                                                                                                                        <div class="mb-3">
+                                                                                                                                                                            <strong>الوصف:</strong>
+                                                                                                                                                                            <p>${record.description}</p>
+                                                                                                                                                                        </div>
+                                                                                                                                                                        ` : ''}
 
             ${record.diagnosis ? `
-                                                                                                                                                                <div class="mb-3">
-                                                                                                                                                                    <strong>التشخيص:</strong>
-                                                                                                                                                                    <p>${record.diagnosis}</p>
-                                                                                                                                                                </div>
-                                                                                                                                                                ` : ''}
+                                                                                                                                                                        <div class="mb-3">
+                                                                                                                                                                            <strong>التشخيص:</strong>
+                                                                                                                                                                            <p>${record.diagnosis}</p>
+                                                                                                                                                                        </div>
+                                                                                                                                                                        ` : ''}
 
             ${record.treatment_plan ? `
-                                                                                                                                                                <div class="mb-3">
-                                                                                                                                                                    <strong>خطة العلاج:</strong>
-                                                                                                                                                                    <p>${record.treatment_plan}</p>
-                                                                                                                                                                </div>
-                                                                                                                                                                ` : ''}
+                                                                                                                                                                        <div class="mb-3">
+                                                                                                                                                                            <strong>خطة العلاج:</strong>
+                                                                                                                                                                            <p>${record.treatment_plan}</p>
+                                                                                                                                                                        </div>
+                                                                                                                                                                        ` : ''}
 
             ${record.notes ? `
-                                                                                                                                                                <div class="mb-3">
-                                                                                                                                                                    <strong>ملاحظات:</strong>
-                                                                                                                                                                    <p>${record.notes}</p>
-                                                                                                                                                                </div>
-                                                                                                                                                                ` : ''}
+                                                                                                                                                                        <div class="mb-3">
+                                                                                                                                                                            <strong>ملاحظات:</strong>
+                                                                                                                                                                            <p>${record.notes}</p>
+                                                                                                                                                                        </div>
+                                                                                                                                                                        ` : ''}
 
             <div class="row">
                 <div class="col-md-6">
@@ -453,16 +455,16 @@
             </div>
 
             ${record.is_urgent ? `
-                                                                                                                                                                <div class="mb-3">
-                                                                                                                                                                    <span class="badge bg-danger">حالة طارئة</span>
-                                                                                                                                                                </div>
-                                                                                                                                                                ` : ''}
+                                                                                                                                                                        <div class="mb-3">
+                                                                                                                                                                            <span class="badge bg-danger">حالة طارئة</span>
+                                                                                                                                                                        </div>
+                                                                                                                                                                        ` : ''}
 
             ${record.requires_follow_up ? `
-                                                                                                                                                                <div class="mb-3">
-                                                                                                                                                                    <span class="badge bg-warning text-dark">يحتاج متابعة</span>
-                                                                                                                                                                </div>
-                                                                                                                                                                ` : ''}
+                                                                                                                                                                        <div class="mb-3">
+                                                                                                                                                                            <span class="badge bg-warning text-dark">يحتاج متابعة</span>
+                                                                                                                                                                        </div>
+                                                                                                                                                                        ` : ''}
         `;
                 document.getElementById('recordDetails').innerHTML = details;
             });

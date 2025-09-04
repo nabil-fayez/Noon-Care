@@ -5,7 +5,9 @@
 @section('content')
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-12">
+            @include('admin.partials.sidebar')
+
+            <div class="col-md-10">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">قائمة الأطباء</h5>
@@ -73,7 +75,7 @@
                                     @forelse($doctors as $doctor)
                                         <tr>
                                             <td>
-                                                <img src="{{ $doctor->profile_image_url ?? 'https://via.placeholder.com/50' }}"
+                                                <img src="{{ $doctor->profile_image ?? 'https://via.placeholder.com/50' }}"
                                                     class="rounded-circle" width="50" height="50" alt="صورة الطبيب">
                                             </td>
                                             <td>{{ $doctor->full_name }}</td>

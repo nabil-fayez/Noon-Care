@@ -5,7 +5,9 @@
 @section('content')
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-12">
+            @include('admin.partials.sidebar')
+
+            <div class="col-md-10">
                 <!-- رسائل التنبيه -->
                 @if (session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -51,8 +53,8 @@
                                 <!-- الصورة الحالية -->
                                 <div class="col-md-12 text-center mb-4">
                                     @if ($doctor->profile_image)
-                                        <img src="{{ $doctor->profile_image_url }}" class="rounded-circle mb-3"
-                                            width="150" height="150" alt="صورة الطبيب الحالية">
+                                        <img src="{{ $doctor->profile_image }}" class="rounded-circle mb-3" width="150"
+                                            height="150" alt="صورة الطبيب الحالية">
                                         <br>
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="remove_image"
@@ -154,22 +156,22 @@
                                 @enderror
                             </div>
 
-<div class="mb-3">
-    <label class="form-label">التخصصات <span class="text-danger">*</span></label>
-    <select class="form-select select2-multiple" name="specializations[]" multiple required>
-        <option value="">اختر التخصصات</option>
-        @foreach($specialties as $specialty)
-            <option value="{{ $specialty->id }}" 
-                    {{ in_array($specialty->id, old('specializations', $selectedSpecialties ?? [])) ? 'selected' : '' }}
-                    data-color="{{ $specialty->color }}">
-                {{ $specialty->name }}
-            </option>
-        @endforeach
-    </select>
-    @error('specializations')
-        <div class="text-danger">{{ $message }}</div>
-    @enderror
-</div>
+                            <div class="mb-3">
+                                <label class="form-label">التخصصات <span class="text-danger">*</span></label>
+                                <select class="form-select select2-multiple" name="specializations[]" multiple required>
+                                    <option value="">اختر التخصصات</option>
+                                    @foreach ($specialties as $specialty)
+                                        <option value="{{ $specialty->id }}"
+                                            {{ in_array($specialty->id, old('specializations', $selectedSpecialties ?? [])) ? 'selected' : '' }}
+                                            data-color="{{ $specialty->color }}">
+                                            {{ $specialty->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('specializations')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
 
                             <div class="form-check form-switch mb-4">
                                 <input class="form-check-input" type="checkbox" id="is_verified" name="is_verified"
@@ -276,50 +278,51 @@
     </script>
 @endpush
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script>
-    // تهيئة Select2 مع دعم الألوان
-    $(document).ready(function() {
-        $('.select2-multiple').select2({
-            placeholder: "اختر التخصصات",
-            allowClear: true,
-            templateResult: formatOption,
-            templateSelection: formatOption
-        });
-        
-        function formatOption(option) {
-            if (!option.id) {
-                return option.text;
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        // تهيئة Select2 مع دعم الألوان
+        $(document).ready(function() {
+            $('.select2-multiple').select2({
+                placeholder: "اختر التخصصات",
+                allowClear: true,
+                templateResult: formatOption,
+                templateSelection: formatOption
+            });
+
+            function formatOption(option) {
+                if (!option.id) {
+                    return option.text;
+                }
+
+                var color = $(option.element).data('color');
+                var $option = $(
+                    '<span><span class="color-badge me-2" style="background-color: ' + color + '"></span>' +
+                    option.text + '</span>'
+                );
+
+                return $option;
             }
-            
-            var color = $(option.element).data('color');
-            var $option = $(
-                '<span><span class="color-badge me-2" style="background-color: ' + color + '"></span>' + option.text + '</span>'
-            );
-            
-            return $option;
-        }
-    });
-</script>
+        });
+    </script>
 @endpush
 
 @push('styles')
-<style>
-    .color-badge {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        vertical-align: middle;
-    }
-    
-    .select2-container--default .select2-selection--multiple {
-        padding: 0.375rem 0.75rem;
-        min-height: 38px;
-    }
-</style>
+    <style>
+        .color-badge {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            vertical-align: middle;
+        }
+
+        .select2-container--default .select2-selection--multiple {
+            padding: 0.375rem 0.75rem;
+            min-height: 38px;
+        }
+    </style>
 @endpush

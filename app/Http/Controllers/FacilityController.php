@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Facility;
 use App\Models\Doctor;
 use App\Models\Service;
+use App\Services\ErrorLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -84,6 +86,11 @@ class FacilityController extends Controller
             return redirect()->route('admin.facilities.index')
                 ->with('success', 'تم إنشاء المنشأة بنجاح.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء إنشاء المنشأة: ' . $e->getMessage())
                 ->withInput();
@@ -165,6 +172,11 @@ class FacilityController extends Controller
             return redirect()->route('admin.facility.show', $facility)
                 ->with('success', 'تم تحديث بيانات المنشأة بنجاح.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء تحديث المنشأة: ' . $e->getMessage())
                 ->withInput();
@@ -201,6 +213,11 @@ class FacilityController extends Controller
             return redirect()->route('admin.facilities.index')
                 ->with('success', 'تم حذف المنشأة بنجاح.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء حذف المنشأة: ' . $e->getMessage());
         }
@@ -209,7 +226,7 @@ class FacilityController extends Controller
     /**
      * تغيير حالة المنشأة (تفعيل/تعطيل)
      */
-    public function toggleStatus(Facility $facility)
+    public function toggleStatus(Request $request, Facility $facility)
     {
         try {
             $facility->update(['is_active' => !$facility->is_active]);
@@ -221,6 +238,11 @@ class FacilityController extends Controller
             return redirect()->back()
                 ->with('success', $message);
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء تغيير حالة المنشأة: ' . $e->getMessage());
         }

@@ -8,7 +8,7 @@
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body text-center">
-                        <img src="{{ $facility->logo ? Storage::url($facility->logo) : 'https://via.placeholder.com/200' }}"
+                        <img src="{{ $facility->logo ? Storage::url($facility->logo) : 'https://avatar.iran.liara.run/public/36' }}"
                             class="rounded mb-3" width="200" height="200">
                         <h3>{{ $facility->business_name }}</h3>
                         <p class="text-muted">{{ $facility->address }}</p>

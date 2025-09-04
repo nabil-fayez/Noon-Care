@@ -9,6 +9,7 @@ use App\Services\MedicalRecordService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Gate;
+use App\Services\ErrorLogService;
 
 class MedicalRecordController extends Controller
 {
@@ -53,6 +54,12 @@ class MedicalRecordController extends Controller
 
             return view('medical_record.index', compact('medicalRecords'));
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء جلب السجلات الطبية: ' . $e->getMessage());
         }
     }
@@ -90,7 +97,12 @@ class MedicalRecordController extends Controller
             return redirect()->route('medical_record.show', $medicalRecord)
                 ->with('success', 'تم إنشاء السجل الطبي بنجاح.');
         } catch (\Exception $e) {
-            dd($e);
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء إنشاء السجل الطبي: ' . $e->getMessage());
@@ -100,7 +112,7 @@ class MedicalRecordController extends Controller
     /**
      * عرض سجل طبي
      */
-    public function show(MedicalRecord $medicalRecord)
+    public function show(Request $request, MedicalRecord $medicalRecord)
     {
         if (!Gate::allows('view', $medicalRecord)) {
             abort(403, 'Unauthorized');
@@ -113,6 +125,12 @@ class MedicalRecordController extends Controller
             }
             return view('medical_record.show', compact('medicalRecord'));
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء جلب بيانات السجل الطبي: ' . $e->getMessage());
         }
     }
@@ -120,7 +138,7 @@ class MedicalRecordController extends Controller
     /**
      * عرض نموذج تعديل سجل طبي
      */
-    public function edit(MedicalRecord $medicalRecord)
+    public function edit(Request $request, MedicalRecord $medicalRecord)
     {
         if (!Gate::allows('update', $medicalRecord)) {
             abort(403, 'Unauthorized');
@@ -132,6 +150,12 @@ class MedicalRecordController extends Controller
 
             return view('medical_record.edit', compact('medicalRecord', 'patients', 'doctors'));
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء تحميل صفحة التعديل: ' . $e->getMessage());
         }
     }
@@ -155,7 +179,12 @@ class MedicalRecordController extends Controller
             return redirect()->route('medical_record.show', $medicalRecord)
                 ->with('success', 'تم تحديث السجل الطبي بنجاح.');
         } catch (\Exception $e) {
-            dd($e);
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء تحديث السجل الطبي: ' . $e->getMessage());
@@ -165,7 +194,7 @@ class MedicalRecordController extends Controller
     /**
      * حذف سجل طبي
      */
-    public function destroy(MedicalRecord $medicalRecord)
+    public function destroy(Request $request, MedicalRecord $medicalRecord)
     {
         if (!Gate::allows('delete', $medicalRecord)) {
             abort(403, 'Unauthorized');
@@ -177,6 +206,12 @@ class MedicalRecordController extends Controller
             return redirect()->route('medical_records.index')
                 ->with('success', 'تم حذف السجل الطبي بنجاح.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء حذف السجل الطبي: ' . $e->getMessage());
         }
     }
@@ -214,7 +249,7 @@ class MedicalRecordController extends Controller
     /**
      * عرض سجلات مريض معين
      */
-    public function patientRecords(Patient $patient)
+    public function patientRecords(Request $request, Patient $patient)
     {
         if (!Gate::allows('viewPatientRecords', $patient->id)) {
             abort(403, 'Unauthorized');
@@ -225,6 +260,12 @@ class MedicalRecordController extends Controller
 
             return view('medical_record.patient', compact('patient', 'medicalRecords'));
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء جلب سجلات المريض: ' . $e->getMessage());
         }
     }

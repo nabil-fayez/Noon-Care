@@ -115,9 +115,11 @@ class Facility extends Authenticatable
     public function getLogoUrlAttribute()
     {
         if ($this->logo) {
+            // تأكد من أن المسار صحيح
             return asset('storage/' . $this->logo);
         }
-        return 'https://via.placeholder.com/150';
+
+        return 'https://avatar.iran.liara.run/public/36';
     }
 
     /**

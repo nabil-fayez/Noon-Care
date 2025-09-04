@@ -5,7 +5,9 @@
 @section('content')
     <div class="container-fluid">
         <div class="row justify-content-center">
-            <div class="col-md-8">
+            @include('admin.partials.sidebar')
+
+            <div class="col-md-10">
                 <!-- رسائل التنبيه -->
                 @if (session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -51,8 +53,8 @@
                                 <!-- الصورة الحالية -->
                                 <div class="col-md-12 text-center mb-4">
                                     @if ($patient->profile_image)
-                                        <img src="{{ $patient->profile_image_url }}" class="rounded-circle mb-3"
-                                            width="150" height="150" alt="صورة المريض الحالية">
+                                        <img src="{{ $patient->profile_image }}" class="rounded-circle mb-3" width="150"
+                                            height="150" alt="صورة المريض الحالية">
                                         <br>
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="remove_image"

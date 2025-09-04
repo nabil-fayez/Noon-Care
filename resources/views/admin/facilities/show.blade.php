@@ -5,7 +5,9 @@
 @section('content')
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-12">
+            @include('admin.partials.sidebar')
+
+            <div class="col-md-10">
                 <!-- رسائل التنبيه -->
                 @if (session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -57,10 +59,10 @@
                             <!-- الشعار والمعلومات الأساسية -->
                             <div class="col-md-4">
                                 <div class="text-center mb-4">
-                                    <img src="{{ $facility->logo_url ?? 'https://via.placeholder.com/200' }}"
+                                    <img src="{{ $facility->logo_url ?? 'https://avatar.iran.liara.run/public/36' }}"
                                         class="rounded mb-3" width="200" height="200" alt="شعار المنشأة">
                                     <h3>{{ $facility->business_name }}</h3>
-                                    <p class="text-muted">@{{ $facility - > username }}</p>
+                                    <p class="text-muted">{{ $facility->username }}</p>
 
                                     <div class="mb-3">
                                         <span class="badge bg-{{ $facility->is_active ? 'success' : 'secondary' }} fs-6">
@@ -235,7 +237,7 @@
                                         @foreach ($facility->doctors->take(5) as $doctor)
                                             <tr>
                                                 <td>
-                                                    <img src="{{ $doctor->profile_image_url ?? 'https://via.placeholder.com/40' }}"
+                                                    <img src="{{ $doctor->profile_image ?? 'https://via.placeholder.com/40' }}"
                                                         class="rounded-circle" width="40" height="40"
                                                         alt="صورة الطبيب">
                                                 </td>

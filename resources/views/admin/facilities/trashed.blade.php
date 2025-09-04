@@ -1,21 +1,19 @@
 @extends('layouts.admin')
 
-@section('title', 'الأطباء المحذوفين - Noon Care')
+@section('title', 'المنشآت المحذوفة - Noon Care')
 
 @section('content')
     <div class="container-fluid">
         <div class="row">
-            @include('admin.partials.sidebar')
-
-            <div class="col-md-10">
+            <div class="col-md-12">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
-                            <i class="bi bi-trash"></i> الأطباء المحذوفين
+                            <i class="bi bi-trash"></i> المنشآت المحذوفة
                         </h5>
                         <div>
-                            <a href="{{ route('admin.doctors.index') }}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> العودة إلى قائمة الأطباء
+                            <a href="{{ route('admin.facilities.index') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> العودة إلى قائمة المنشآت
                             </a>
                         </div>
                     </div>
@@ -28,76 +26,58 @@
                             </div>
                         @endif
 
-                        @if (session('error'))
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        @endif
-
-                        @if ($doctors->count() > 0)
+                        @if ($facilities->count() > 0)
                             <div class="table-responsive">
                                 <table class="table table-striped table-hover">
                                     <thead class="table-dark">
                                         <tr>
-                                            <th>الصورة</th>
-                                            <th>الاسم</th>
+                                            <th>الشعار</th>
+                                            <th>اسم المنشأة</th>
                                             <th>البريد الإلكتروني</th>
                                             <th>الهاتف</th>
-                                            <th>التخصصات</th>
                                             <th>تاريخ الحذف</th>
                                             <th>الإجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($doctors as $doctor)
+                                        @foreach ($facilities as $facility)
                                             <tr>
                                                 <td>
-                                                    <img src="{{ $doctor->profile_image ?? 'https://via.placeholder.com/50' }}"
-                                                        class="rounded-circle" width="50" height="50"
-                                                        alt="صورة الطبيب">
+                                                    <img src="{{ $facility->logo_url ?? 'https://via.placeholder.com/50' }}"
+                                                        class="rounded" width="50" height="50" alt="شعار المنشأة">
                                                 </td>
                                                 <td>
-                                                    <strong>{{ $doctor->full_name }}</strong>
+                                                    <strong>{{ $facility->business_name }}</strong>
                                                     <br>
-                                                    <small class="text-muted">{{ $doctor->username }}</small>
+                                                    <small class="text-muted">@{{ $facility - > username }}</small>
                                                 </td>
-                                                <td>{{ $doctor->email }}</td>
-                                                <td>{{ $doctor->phone ?? 'غير متوفر' }}</td>
-                                                <td>
-                                                    @if ($doctor->specialties->count() > 0)
-                                                        @foreach ($doctor->specialties as $specialty)
-                                                            <span class="badge bg-info mb-1">{{ $specialty->name }}</span>
-                                                        @endforeach
-                                                    @else
-                                                        <span class="text-muted">لا توجد تخصصات</span>
-                                                    @endif
-                                                </td>
+                                                <td>{{ $facility->email ?? 'غير متوفر' }}</td>
+                                                <td>{{ $facility->phone ?? 'غير متوفر' }}</td>
                                                 <td>
                                                     <span class="badge bg-secondary">
-                                                        {{ $doctor->deleted_at->format('Y-m-d H:i') }}
+                                                        {{ $facility->deleted_at->format('Y-m-d H:i') }}
                                                     </span>
                                                     <br>
                                                     <small class="text-muted">
-                                                        {{ $doctor->deleted_at->diffForHumans() }}
+                                                        {{ $facility->deleted_at->diffForHumans() }}
                                                     </small>
                                                 </td>
                                                 <td>
                                                     <div class="btn-group" role="group">
-                                                        <form action="{{ route('admin.doctor.restore', $doctor->id) }}"
+                                                        <form action="{{ route('admin.facility.restore', $facility->id) }}"
                                                             method="POST" class="d-inline">
                                                             @csrf
                                                             @method('POST')
                                                             <button type="submit" class="btn btn-sm btn-success"
-                                                                onclick="return confirm('هل أنت متأكد من استعادة هذا الطبيب؟')">
+                                                                onclick="return confirm('هل أنت متأكد من استعادة هذه المنشأة؟')">
                                                                 <i class="bi bi-arrow-clockwise"></i> استعادة
                                                             </button>
                                                         </form>
 
                                                         <button type="button" class="btn btn-sm btn-danger"
                                                             data-bs-toggle="modal" data-bs-target="#deleteModal"
-                                                            data-doctor-id="{{ $doctor->id }}"
-                                                            data-doctor-name="{{ $doctor->full_name }}">
+                                                            data-facility-id="{{ $facility->id }}"
+                                                            data-facility-name="{{ $facility->business_name }}">
                                                             <i class="bi bi-trash-fill"></i> حذف نهائي
                                                         </button>
                                                     </div>
@@ -110,15 +90,15 @@
 
                             <!-- التصفح -->
                             <div class="d-flex justify-content-center mt-4">
-                                {{ $doctors->links() }}
+                                {{ $facilities->links() }}
                             </div>
                         @else
                             <div class="text-center text-muted py-5">
                                 <i class="bi bi-trash display-4"></i>
                                 <h4 class="mt-3">سلة المحذوفات فارغة</h4>
-                                <p class="mb-4">لا توجد أي أطباء محذوفين حالياً</p>
-                                <a href="{{ route('admin.doctors.index') }}" class="btn btn-primary">
-                                    <i class="bi bi-arrow-left"></i> العودة إلى قائمة الأطباء
+                                <p class="mb-4">لا توجد أي منشآت محذوفة حالياً</p>
+                                <a href="{{ route('admin.facilities.index') }}" class="btn btn-primary">
+                                    <i class="bi bi-arrow-left"></i> العودة إلى قائمة المنشآت
                                 </a>
                             </div>
                         @endif
@@ -140,10 +120,10 @@
                         aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>هل أنت متأكد من أنك تريد حذف الطبيب <strong id="doctorName"></strong> نهائياً؟</p>
+                    <p>هل أنت متأكد من أنك تريد حذف المنشأة <strong id="facilityName"></strong> نهائياً؟</p>
                     <p class="text-danger">
                         <i class="bi bi-exclamation-circle"></i>
-                        تحذير: هذه العملية لا يمكن التراجع عنها وسيتم حذف جميع بيانات الطبيب بشكل نهائي.
+                        تحذير: هذه العملية لا يمكن التراجع عنها وسيتم حذف جميع بيانات المنشأة بشكل نهائي.
                     </p>
                 </div>
                 <div class="modal-footer">
@@ -166,15 +146,15 @@
         const deleteModal = document.getElementById('deleteModal');
         deleteModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
-            const doctorId = button.getAttribute('data-doctor-id');
-            const doctorName = button.getAttribute('data-doctor-name');
+            const facilityId = button.getAttribute('data-facility-id');
+            const facilityName = button.getAttribute('data-facility-name');
 
             // تحديث النص في الـ modal
-            document.getElementById('doctorName').textContent = doctorName;
+            document.getElementById('facilityName').textContent = facilityName;
 
             // تحديث action في الفورم
             const form = document.getElementById('deleteForm');
-            form.action = `/admin/doctors/${doctorId}/force`;
+            form.action = `/admin/facilities/${facilityId}/force-destroy`;
         });
 
         // إضافة تأثيرات للجدول

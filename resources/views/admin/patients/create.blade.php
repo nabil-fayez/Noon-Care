@@ -5,7 +5,9 @@
 @section('content')
     <div class="container-fluid">
         <div class="row justify-content-center">
-            <div class="col-md-8">
+            @include('admin.partials.sidebar')
+
+            <div class="col-md-10">
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">

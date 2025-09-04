@@ -5,7 +5,9 @@
 @section('content')
     <div class="container-fluid">
         <div class="row justify-content-center">
-            <div class="col-md-8">
+            @include('admin.partials.sidebar')
+
+            <div class="col-md-10">
                 <!-- رسائل التنبيه -->
                 @if (session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -61,7 +63,7 @@
                                 <img src="{{ $facility->logo_url ?? 'https://via.placeholder.com/150' }}"
                                     class="rounded mb-3" width="150" height="150" alt="شعار المنشأة">
                                 <h4>{{ $facility->business_name }}</h4>
-                                <p class="text-muted">@{{ $facility - > username }}</p>
+                                <p class="text-muted">{{ $facility->username }}</p>
                             </div>
                             <div class="col-md-8">
                                 <div class="row">
@@ -206,7 +208,7 @@
         document.getElementById('deleteForm').addEventListener('submit', function(e) {
             if (!confirm(
                     'هل أنت متأكد تماماً من أنك تريد حذف هذه المنشأة؟ لا يمكن التراجع عن هذا الإجراء إلا عن طريق الاستعادة من سلة المحذوفات.'
-                    )) {
+                )) {
                 e.preventDefault();
             }
         });

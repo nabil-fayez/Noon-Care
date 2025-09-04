@@ -5,7 +5,9 @@
 @section('content')
     <div class="container-fluid">
         <div class="row justify-content-center">
-            <div class="col-md-8">
+            @include('admin.partials.sidebar')
+
+            <div class="col-md-10">
                 <!-- رسائل التنبيه -->
                 @if (session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -58,7 +60,7 @@
                         <!-- معلومات المريض -->
                         <div class="row mb-4">
                             <div class="col-md-4 text-center">
-                                <img src="{{ $patient->profile_image_url ?? 'https://via.placeholder.com/150' }}"
+                                <img src="{{ $patient->profile_image ?? 'https://via.placeholder.com/150' }}"
                                     class="rounded-circle mb-3" width="150" height="150" alt="صورة المريض">
                                 <h4>{{ $patient->full_name }}</h4>
                                 <p class="text-muted">{{ $patient->username }}</p>

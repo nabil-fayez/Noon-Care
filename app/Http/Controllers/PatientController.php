@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Policies\PatientPolicy;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use App\Services\ErrorLogService;
 
 class PatientController extends Controller
 {
@@ -44,6 +45,12 @@ class PatientController extends Controller
 
             return view('admin.patients.index', compact('patients'));
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء جلب بيانات المرضى: ' . $e->getMessage());
         }
     }
@@ -85,6 +92,12 @@ class PatientController extends Controller
             return redirect()->route('admin.patients.index')
                 ->with('success', 'تم إنشاء المريض بنجاح.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء إنشاء المريض: ' . $e->getMessage());
@@ -95,7 +108,7 @@ class PatientController extends Controller
     /**
      * عرض بيانات مريض
      */
-    public function show(Patient $patient)
+    public function show(Request $request, Patient $patient)
     {
         if (!Gate::allows('view', $patient)) {
             abort(403, 'Unauthorized');
@@ -107,7 +120,6 @@ class PatientController extends Controller
                 'appointments.facility',
                 'medicalRecords'
             ]);
-
             // تحديد الـ view بناءً على نوع المستخدم
             if (Auth::guard('admin')->check()) {
                 return view('admin.patients.show', compact('patient'));
@@ -115,6 +127,12 @@ class PatientController extends Controller
                 return view('patient.show', compact('patient'));
             }
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء جلب بيانات المريض: ' . $e->getMessage());
         }
     }
@@ -122,7 +140,7 @@ class PatientController extends Controller
     /**
      * عرض نموذج تعديل مريض
      */
-    public function edit(Patient $patient)
+    public function edit(Request $request, Patient $patient)
     {
         if (!Gate::allows('update', $patient)) {
             abort(403, 'Unauthorized');
@@ -135,6 +153,12 @@ class PatientController extends Controller
                 return view("patient.update", compact('patient'));
             }
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء تحميل صفحة التعديل: ' . $e->getMessage());
         }
     }
@@ -162,6 +186,12 @@ class PatientController extends Controller
                     ->with('success', 'تم تحديث بياناتك بنجاح.');
             }
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء تحديث المريض: ' . $e->getMessage());
@@ -171,11 +201,17 @@ class PatientController extends Controller
     /**
      * عرض نموذج تأكيد الحذف
      */
-    public function delete(Patient $patient)
+    public function delete(Request $request, Patient $patient)
     {
         try {
             return view('admin.patients.delete', compact('patient'));
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء تحميل صفحة الحذف: ' . $e->getMessage());
         }
     }
@@ -183,7 +219,7 @@ class PatientController extends Controller
     /**
      * حذف مريض
      */
-    public function destroy(Patient $patient)
+    public function destroy(Request $request, Patient $patient)
     {
         try {
             $this->patientService->deletePatient($patient);
@@ -191,6 +227,12 @@ class PatientController extends Controller
             return redirect()->route('admin.patients.index')
                 ->with('success', 'تم حذف المريض بنجاح.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء حذف المريض: ' . $e->getMessage());
         }
     }
@@ -198,7 +240,7 @@ class PatientController extends Controller
     /**
      * تبديل حالة المريض
      */
-    public function toggleStatus(Patient $patient)
+    public function toggleStatus(Request $request, Patient $patient)
     {
         try {
             $this->patientService->toggleStatus($patient);
@@ -206,6 +248,12 @@ class PatientController extends Controller
             $status = $patient->is_active ? 'مفعل' : 'معطل';
             return redirect()->back()->with('success', "تم تغيير حالة المريض إلى: $status");
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء تغيير حالة المريض: ' . $e->getMessage());
         }
     }
@@ -247,7 +295,7 @@ class PatientController extends Controller
         return $request->validate($rules);
     }
 
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         try {
             $patient = auth()->guard('patient')->user();
@@ -284,6 +332,12 @@ class PatientController extends Controller
                 'recentMedicalRecords'
             ));
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء تحميل لوحة التحكم: ' . $e->getMessage());
         }
     }
@@ -314,6 +368,12 @@ class PatientController extends Controller
                 return view('patient.medical-history', compact('medicalRecords'));
             }
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء جلب السجل الطبي: ' . $e->getMessage());
         }
     }

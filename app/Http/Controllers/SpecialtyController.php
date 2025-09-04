@@ -6,6 +6,7 @@ use App\Models\Specialty;
 use App\Services\SpecialtyService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Services\ErrorLogService;
 
 class SpecialtyController extends Controller
 {
@@ -24,32 +25,44 @@ class SpecialtyController extends Controller
         try {
             $perPage = $request->get('per_page', 10);
             $specialties = $this->specialtyService->getSpecialties($request->all(), $perPage);
-            
+
             return view('admin.specialties.index', compact('specialties'));
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء جلب التخصصات: ' . $e->getMessage());
         }
     }
-/**
- * عرض التخصصات للواجهة الرئيسية
- */
-public function publicIndex(Request $request)
-{
-    try {
-        $perPage = $request->get('per_page', 12);
-        $specialties = Specialty::active()
-            ->withCount('doctors')
-            ->when($request->has('search'), function($query) use ($request) {
-                return $query->search($request->search);
-            })
-            ->orderBy('doctors_count', 'desc')
-            ->paginate($perPage);
-        
-        return view('specialties.index', compact('specialties'));
-    } catch (\Exception $e) {
-        return redirect()->back()->with('error', 'حدث خطأ أثناء جلب التخصصات: ' . $e->getMessage());
+    /**
+     * عرض التخصصات للواجهة الرئيسية
+     */
+    public function publicIndex(Request $request)
+    {
+        try {
+            $perPage = $request->get('per_page', 12);
+            $specialties = Specialty::active()
+                ->withCount('doctors')
+                ->when($request->has('search'), function ($query) use ($request) {
+                    return $query->search($request->search);
+                })
+                ->orderBy('doctors_count', 'desc')
+                ->paginate($perPage);
+
+            return view('specialties.index', compact('specialties'));
+        } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
+            return redirect()->back()->with('error', 'حدث خطأ أثناء جلب التخصصات: ' . $e->getMessage());
+        }
     }
-}
     /**
      * عرض نموذج إنشاء تخصص جديد
      */
@@ -65,12 +78,17 @@ public function publicIndex(Request $request)
     {
         try {
             $validated = $this->validateSpecialtyData($request);
-            
+
             $specialty = $this->specialtyService->createSpecialty($validated);
-            
+
             return redirect()->route('admin.specialties.index')
                 ->with('success', 'تم إنشاء التخصص بنجاح.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
 
             return redirect()->back()
                 ->withInput()
@@ -81,15 +99,21 @@ public function publicIndex(Request $request)
     /**
      * عرض بيانات تخصص
      */
-    public function show(Specialty $specialty)
+    public function show(Request $request, Specialty $specialty)
     {
         try {
-            $specialty->load(['doctors' => function($query) {
+            $specialty->load(['doctors' => function ($query) {
                 $query->withCount('appointments');
             }]);
-            
+
             return view('admin.specialties.show', compact('specialty'));
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء جلب بيانات التخصص: ' . $e->getMessage());
         }
     }
@@ -115,6 +139,12 @@ public function publicIndex(Request $request)
             return redirect()->route('admin.specialty.show', $specialty)
                 ->with('success', 'تم تحديث بيانات التخصص بنجاح.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء تحديث التخصص: ' . $e->getMessage());
@@ -124,11 +154,17 @@ public function publicIndex(Request $request)
     /**
      * عرض نموذج تأكيد الحذف
      */
-    public function delete(Specialty $specialty)
+    public function delete(Request $request, Specialty $specialty)
     {
         try {
             return view('admin.specialties.delete', compact('specialty'));
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
+
             return redirect()->back()->with('error', 'حدث خطأ أثناء تحميل صفحة الحذف: ' . $e->getMessage());
         }
     }
@@ -136,14 +172,19 @@ public function publicIndex(Request $request)
     /**
      * حذف تخصص
      */
-    public function destroy(Specialty $specialty)
+    public function destroy(request $request, Specialty $specialty)
     {
         try {
             $this->specialtyService->deleteSpecialty($specialty);
-            
+
             return redirect()->route('admin.specialties.index')
                 ->with('success', 'تم حذف التخصص بنجاح.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()->with('error', 'حدث خطأ أثناء حذف التخصص: ' . $e->getMessage());
         }
     }
@@ -151,14 +192,19 @@ public function publicIndex(Request $request)
     /**
      * تبديل حالة التخصص
      */
-    public function toggleStatus(Specialty $specialty)
+    public function toggleStatus(Request $request, Specialty $specialty)
     {
         try {
             $this->specialtyService->toggleStatus($specialty);
-            
+
             $status = $specialty->is_active ? 'مفعل' : 'معطل';
             return redirect()->back()->with('success', "تم تغيير حالة التخصص إلى: $status");
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()->with('error', 'حدث خطأ أثناء تغيير حالة التخصص: ' . $e->getMessage());
         }
     }
@@ -191,16 +237,21 @@ public function publicIndex(Request $request)
     {
         try {
             $specialties = Specialty::active()
-                ->when($request->has('search'), function($query) use ($request) {
+                ->when($request->has('search'), function ($query) use ($request) {
                     return $query->search($request->search);
                 })
                 ->get(['id', 'name', 'icon']);
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $specialties
             ]);
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return response()->json([
                 'success' => false,
                 'message' => 'حدث خطأ أثناء جلب التخصصات'

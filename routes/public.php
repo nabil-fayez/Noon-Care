@@ -11,3 +11,7 @@ Route::get(
 )->name('welcome');
 
 Route::get('/specialties', [SpecialtyController::class, 'publicIndex'])->name('specialties.index');
+
+Route::get('/test', function () {
+    return "<img src='/storage/patients/profile_images/0pz5NtTzbA3BnrmKqEe9Z1lT66MWdCQCYd3S20t1.jpg'/>";
+});

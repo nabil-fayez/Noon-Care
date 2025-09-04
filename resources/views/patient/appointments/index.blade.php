@@ -61,7 +61,7 @@
                                                     <tr>
                                                         <td>
                                                             <div class="d-flex align-items-center">
-                                                                <img src="{{ $appointment->doctor->profile_image_url ?? 'https://via.placeholder.com/40' }}"
+                                                                <img src="{{ $appointment->doctor->profile_image ?? 'https://via.placeholder.com/40' }}"
                                                                     class="rounded-circle me-2" width="40"
                                                                     height="40">
                                                                 <div>

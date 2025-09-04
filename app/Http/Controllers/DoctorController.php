@@ -8,7 +8,9 @@ use App\Services\DoctorService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use App\Services\ErrorLogService;
 
 class DoctorController extends Controller
 {
@@ -36,8 +38,11 @@ class DoctorController extends Controller
                 'filters' => $request->all()
             ]);
         } catch (\Exception $e) {
-            dd($e);
-            exit;
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()->with('error', 'حدث خطأ أثناء جلب بيانات الأطباء: ' . $e->getMessage());
         }
     }
@@ -74,6 +79,11 @@ class DoctorController extends Controller
             return redirect()->route('admin.doctors.index')
                 ->with('success', 'تم إنشاء الطبيب بنجاح وإرسال بيانات التسجيل.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء إنشاء الطبيب: ' . $e->getMessage());
@@ -83,7 +93,7 @@ class DoctorController extends Controller
     /**
      * عرض بيانات طبيب
      */
-    public function show(Doctor $doctor)
+    public function show(Request $request, Doctor $doctor)
     {
         try {
             $doctor->load(['specialties', 'facilities', 'appointments', 'reviews']);
@@ -92,8 +102,11 @@ class DoctorController extends Controller
 
             return view('admin.doctors.show', compact('doctor', 'allSpecialties'));
         } catch (\Exception $e) {
-            dd($e);
-            exit;
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()->with('error', 'حدث خطأ أثناء جلب بيانات الطبيب: ' . $e->getMessage());
         }
     }
@@ -102,7 +115,7 @@ class DoctorController extends Controller
     /**
      * عرض نموذج تعديل طبيب
      */
-    public function edit(Doctor $doctor)
+    public function edit(Request $request, Doctor $doctor)
     {
         try {
             $doctor->load('specialties');
@@ -111,6 +124,11 @@ class DoctorController extends Controller
 
             return view('admin.doctors.update', compact('doctor', 'specialties', 'selectedSpecialties'));
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()->with('error', 'حدث خطأ أثناء تحميل صفحة التعديل: ' . $e->getMessage());
         }
     }
@@ -129,6 +147,11 @@ class DoctorController extends Controller
             return redirect()->route('admin.doctor.show', $doctor)
                 ->with('success', 'تم تحديث بيانات الطبيب بنجاح.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء تحديث الطبيب: ' . $e->getMessage());
@@ -151,13 +174,18 @@ class DoctorController extends Controller
             return redirect()->route('admin.doctor.show', $doctor)
                 ->with('success', 'تم تحديث تخصصات الطبيب بنجاح');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()->with('error', 'حدث خطأ أثناء تحديث التخصصات: ' . $e->getMessage());
         }
     }
     /**
      * عرض نموذج تأكيد الحذف
      */
-    public function delete(Doctor $doctor)
+    public function delete(Request $request, Doctor $doctor)
     {
         try {
             // تحميل العلاقات لحساب الإحصائيات
@@ -165,6 +193,11 @@ class DoctorController extends Controller
 
             return view('admin.doctors.delete', compact('doctor'));
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()->with('error', 'حدث خطأ أثناء تحميل صفحة الحذف: ' . $e->getMessage());
         }
     }
@@ -192,6 +225,11 @@ class DoctorController extends Controller
             return redirect()->route('admin.doctors.index')
                 ->with('success', 'تم حذف الطبيب بنجاح. يمكنك استعادته من سلة المحذوفات.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()->with('error', 'حدث خطأ أثناء حذف الطبيب: ' . $e->getMessage());
         }
     }
@@ -199,7 +237,7 @@ class DoctorController extends Controller
     /**
      * استعادة طبيب محذوف
      */
-    public function restore($id)
+    public function restore(Request $request, $id)
     {
         try {
             $doctor = Doctor::withTrashed()->findOrFail($id);
@@ -208,6 +246,11 @@ class DoctorController extends Controller
             return redirect()->route('admin.doctors.index')
                 ->with('success', 'تم استعادة الطبيب بنجاح.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()->with('error', 'حدث خطأ أثناء استعادة الطبيب: ' . $e->getMessage());
         }
     }
@@ -215,7 +258,7 @@ class DoctorController extends Controller
     /**
      * حذف طبيب نهائيًا (Force Delete)
      */
-    public function forceDestroy($id)
+    public function forceDestroy(Request $request, $id)
     {
         try {
             $doctor = Doctor::withTrashed()->findOrFail($id);
@@ -224,6 +267,11 @@ class DoctorController extends Controller
             return redirect()->route('admin.doctors.index')
                 ->with('success', 'تم حذف الطبيب نهائيًا بنجاح.');
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()->with('error', 'حدث خطأ أثناء الحذف النهائي للطبيب: ' . $e->getMessage());
         }
     }
@@ -266,7 +314,7 @@ class DoctorController extends Controller
     /**
      * تغيير حالة توثيق الطبيب
      */
-    public function toggleVerification(Doctor $doctor)
+    public function toggleVerification(Request $request, Doctor $doctor)
     {
         try {
             $this->doctorService->toggleVerification($doctor);
@@ -276,6 +324,11 @@ class DoctorController extends Controller
 
             return redirect()->back()->with('success', $message);
         } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()->with('error', 'حدث خطأ أثناء تغيير حالة التوثيق: ' . $e->getMessage());
         }
     }
@@ -297,30 +350,12 @@ class DoctorController extends Controller
                 'doctors' => $doctors
             ]);
         } catch (\Exception $e) {
-            dd($e);
-            exit;
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ جديد! : " . $e->getMessage(),
+                $e,
+                $request
+            );
             return redirect()->back()->with('error', 'حدث خطأ أثناء جلب الأطباء المحذوفين: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * API: الحصول على الأطباء حسب التخصص
-     */
-    public function getBySpecialty(Request $request)
-    {
-        try {
-            $specialtyId = $request->get('specialty_id');
-            $doctors = $this->doctorService->getDoctorsBySpecialty($specialtyId);
-
-            return response()->json([
-                'success' => true,
-                'doctors' => $doctors
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء جلب الأطباء: ' . $e->getMessage()
-            ], 500);
         }
     }
 }
