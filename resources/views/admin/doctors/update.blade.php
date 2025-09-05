@@ -156,22 +156,41 @@
                                 @enderror
                             </div>
 
-                            <div class="mb-3">
+                            <!-- بداية التعديل على قسم التخصصات -->
+                            <div class="mb-4">
                                 <label class="form-label">التخصصات <span class="text-danger">*</span></label>
-                                <select class="form-select select2-multiple" name="specializations[]" multiple required>
-                                    <option value="">اختر التخصصات</option>
-                                    @foreach ($specialties as $specialty)
-                                        <option value="{{ $specialty->id }}"
-                                            {{ in_array($specialty->id, old('specializations', $selectedSpecialties ?? [])) ? 'selected' : '' }}
-                                            data-color="{{ $specialty->color }}">
-                                            {{ $specialty->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                
+                                <!-- حقل البحث -->
+                                <div class="mb-3">
+                                    <input type="text" id="specialty-search" class="form-control" placeholder="ابحث عن تخصص...">
+                                </div>
+                                
+                                <!-- مربع التخصصات -->
+                                <div class="specialties-container border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                    <div class="row">
+                                        @foreach ($specialties as $specialty)
+                                            <div class="col-md-4 mb-2 specialty-item">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" 
+                                                           name="specializations[]" 
+                                                           value="{{ $specialty->id }}"
+                                                           id="specialty-{{ $specialty->id }}"
+                                                           {{ in_array($specialty->id, old('specializations', $selectedSpecialties ?? [])) ? 'checked' : '' }}>
+                                                    <label class="form-check-label d-flex align-items-center" for="specialty-{{ $specialty->id }}">
+                                                        <span class="color-badge me-2" style="background-color: {{ $specialty->color }}"></span>
+                                                        {{ $specialty->name }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                
                                 @error('specializations')
-                                    <div class="text-danger">{{ $message }}</div>
+                                    <div class="text-danger mt-2">{{ $message }}</div>
                                 @enderror
                             </div>
+                            <!-- نهاية التعديل على قسم التخصصات -->
 
                             <div class="form-check form-switch mb-4">
                                 <input class="form-check-input" type="checkbox" id="is_verified" name="is_verified"
@@ -235,6 +254,22 @@
         .card {
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         }
+        
+        .color-badge {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            vertical-align: middle;
+        }
+        
+        .specialty-item {
+            transition: all 0.3s ease;
+        }
+        
+        .specialty-item.hidden {
+            display: none;
+        }
     </style>
 @endpush
 
@@ -242,7 +277,7 @@
     <script>
         // معاينة الصورة قبل الرفع
         document.getElementById('profile_image').addEventListener('change', function(e) {
-            const file = e.target.files[0];
+            const file = e.target.filters[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -275,54 +310,20 @@
                 alert('يجب اختيار تخصص واحد على الأقل');
             }
         });
-    </script>
-@endpush
-@push('styles')
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-@endpush
 
-@push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script>
-        // تهيئة Select2 مع دعم الألوان
-        $(document).ready(function() {
-            $('.select2-multiple').select2({
-                placeholder: "اختر التخصصات",
-                allowClear: true,
-                templateResult: formatOption,
-                templateSelection: formatOption
-            });
-
-            function formatOption(option) {
-                if (!option.id) {
-                    return option.text;
+        // وظيفة البحث في التخصصات
+        document.getElementById('specialty-search').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const specialtyItems = document.querySelectorAll('.specialty-item');
+            
+            specialtyItems.forEach(item => {
+                const label = item.querySelector('.form-check-label').textContent.toLowerCase();
+                if (label.includes(searchTerm)) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
                 }
-
-                var color = $(option.element).data('color');
-                var $option = $(
-                    '<span><span class="color-badge me-2" style="background-color: ' + color + '"></span>' +
-                    option.text + '</span>'
-                );
-
-                return $option;
-            }
+            });
         });
     </script>
-@endpush
-
-@push('styles')
-    <style>
-        .color-badge {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            vertical-align: middle;
-        }
-
-        .select2-container--default .select2-selection--multiple {
-            padding: 0.375rem 0.75rem;
-            min-height: 38px;
-        }
-    </style>
 @endpush
