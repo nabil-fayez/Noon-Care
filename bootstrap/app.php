@@ -14,10 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'user.type'=> CheckUserTypeMiddleware::class,
-            'guest'=> RedirectIfAuthenticatedMiddleware::class
-        ]);
+            'user.type' => CheckUserTypeMiddleware::class,
+            'guest' => RedirectIfAuthenticatedMiddleware::class,
+            'check.permission' => \App\Http\Middleware\CheckPermission::class,
 
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

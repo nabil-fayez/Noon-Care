@@ -6,16 +6,76 @@ use App\Models\Appointment;
 use App\Models\WorkingHour;
 use App\Models\DoctorFacility;
 use App\Notifications\AppointmentConfirmed;
+use App\Notifications\AppointmentCancelled;
 use App\Notifications\AppointmentReminder;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 
 class AppointmentService
 {
+    public function getAppointments($filters = [], $perPage = 10)
+    {
+        $query = Appointment::with(['patient', 'doctor', 'facility', 'service']);
 
-    public function bookAppointment($patientId, $doctorId, $facilityId, $datetime, $notes = null)
+        if (isset($filters['search'])) {
+            $query->whereHas('patient', function ($q) use ($filters) {
+                $q->where('first_name', 'like', '%' . $filters['search'] . '%')
+                    ->orWhere('last_name', 'like', '%' . $filters['search'] . '%')
+                    ->orWhere('phone', 'like', '%' . $filters['search'] . '%');
+            });
+        }
+
+        if (isset($filters['doctor_id'])) {
+            $query->where('doctor_id', $filters['doctor_id']);
+        }
+
+        if (isset($filters['facility_id'])) {
+            $query->where('facility_id', $filters['facility_id']);
+        }
+
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['date'])) {
+            $query->whereDate('appointment_datetime', $filters['date']);
+        }
+
+        return $query->orderBy('appointment_datetime', 'desc')->paginate($perPage);
+    }
+
+    public function createAppointment($data)
+    {
+        return Appointment::create($data);
+    }
+
+    public function updateAppointment(Appointment $appointment, $data)
+    {
+        return $appointment->update($data);
+    }
+
+    public function deleteAppointment(Appointment $appointment)
+    {
+        return $appointment->delete();
+    }
+
+    public function restoreAppointment(Appointment $appointment)
+    {
+        return $appointment->restore();
+    }
+
+    public function forceDeleteAppointment(Appointment $appointment)
+    {
+        return $appointment->forceDelete();
+    }
+
+    public function updateAppointmentStatus(Appointment $appointment, $status)
+    {
+        return $appointment->update(['status' => $status]);
+    }
+
+    public function bookAppointment($patientId, $doctorId, $facilityId, $datetime, $serviceId = null, $notes = null)
     {
         try {
             DB::beginTransaction();
@@ -48,15 +108,28 @@ class AppointmentService
             }
 
             // التحقق من عدم وجود موعد متعارض
-            // $existingAppointment = Appointment::where('doctor_id', $doctorId)
-            //     ->where('facility_id', $facilityId)
-            //     ->where('appointment_datetime', $datetime)
-            //     ->whereIn('status', ['new', 'confirmed'])
-            //     ->exists();
+            $existingAppointment = Appointment::where('doctor_id', $doctorId)
+                ->where('facility_id', $facilityId)
+                ->where('appointment_datetime', $datetime)
+                ->whereIn('status', ['new', 'confirmed'])
+                ->exists();
 
-            // if ($existingAppointment) {
-            //     throw new \Exception('هذا الموعد محجوز مسبقاً');
-            // }
+            if ($existingAppointment) {
+                throw new \Exception('هذا الموعد محجوز مسبقاً');
+            }
+
+            // الحصول على سعر الخدمة إذا كانت متوفرة
+            $price = null;
+            if ($serviceId) {
+                $pricing = DB::table('facility_service_pricing')
+                    ->where('facility_id', $facilityId)
+                    ->where('service_id', $serviceId)
+                    ->first();
+
+                if ($pricing) {
+                    $price = $pricing->price;
+                }
+            }
 
             // إنشاء الموعد
             $appointment = Appointment::create([
@@ -64,10 +137,11 @@ class AppointmentService
                 'facility_id' => $facilityId,
                 'doctor_facility_id' => $doctorFacility->id,
                 'patient_id' => $patientId,
+                'service_id' => $serviceId,
                 'appointment_datetime' => $datetime,
                 'duration' => $workingHour->slot_duration,
                 'notes' => $notes,
-                'price' => $doctorFacility->consultation_price,
+                'price' => $price,
                 'status' => 'new'
             ]);
 
@@ -85,9 +159,6 @@ class AppointmentService
         }
     }
 
-    /**
-     * الحصول على الأوقات المتاحة
-     */
     public function getAvailableSlots($doctorId, $facilityId, $date)
     {
         $dayOfWeek = Carbon::parse($date)->format('D');
@@ -133,9 +204,6 @@ class AppointmentService
         return $availableSlots;
     }
 
-    /**
-     * تأكيد موعد
-     */
     public function confirmAppointment($appointmentId)
     {
         try {
@@ -154,9 +222,6 @@ class AppointmentService
         }
     }
 
-    /**
-     * إلغاء موعد
-     */
     public function cancelAppointment($appointmentId, $reason = null)
     {
         try {
@@ -176,9 +241,6 @@ class AppointmentService
         }
     }
 
-    /**
-     * إرسال تذكير بالمواعيد
-     */
     public function sendReminders()
     {
         try {

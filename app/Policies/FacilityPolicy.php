@@ -2,67 +2,81 @@
 
 namespace App\Policies;
 
-use App\Models\User;
-use App\Models\Facility;
+use App\Models\Admin;
+use App\Models\Facility as FacilityModel;
+use App\Models\Patient;
+use App\Models\Doctor;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 class FacilityPolicy
 {
     use HandlesAuthorization;
 
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user)
+    public function viewAny(Authenticatable $user)
     {
-        return $user->hasPermission('facilities.view');
+        if ($user instanceof Admin) {
+            return $user->hasPermission('facilities.view');
+        }
+
+        return $user instanceof Patient || $user instanceof Doctor;
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Facility $facility)
+    public function view(Authenticatable $user, FacilityModel $facility)
     {
-        return $user->hasPermission('facilities.view');
+        if ($user instanceof Admin) {
+            return $user->hasPermission('facilities.view');
+        }
+
+        if ($user instanceof Patient) {
+            // يمكن للمريض رؤية المنشآت المرتبطة بمواعيده
+            return $user->appointments()->where('facility_id', $facility->id)->exists();
+        }
+
+        if ($user instanceof Doctor) {
+            // يمكن للطبيب رؤية المنشآت المرتبطة به
+            return $user->facilities()->where('facility_id', $facility->id)->exists();
+        }
+
+        return false;
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(User $user)
+    public function create(Authenticatable $user)
     {
-        return $user->hasPermission('facilities.create');
+        return $user instanceof Admin && $user->hasPermission('facilities.create');
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Facility $facility)
+    public function update(Authenticatable $user, FacilityModel $facility)
     {
-        return $user->hasPermission('facilities.update');
+        if ($user instanceof Admin) {
+            return $user->hasPermission('facilities.update');
+        }
+
+        // يمكن للمنشأة تحديث بياناتها الخاصة
+        if ($user instanceof FacilityModel) {
+            return $user->id === $facility->id;
+        }
+
+        return false;
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(User $user, Facility $facility)
+    public function delete(Authenticatable $user, FacilityModel $facility)
     {
-        return $user->hasPermission('facilities.delete');
+        return $user instanceof Admin && $user->hasPermission('facilities.delete');
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, Facility $facility)
+    public function restore(Authenticatable $user, FacilityModel $facility)
     {
-        return $user->hasPermission('facilities.restore');
+        return $user instanceof Admin && $user->hasPermission('facilities.restore');
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, Facility $facility)
+    public function forceDelete(Authenticatable $user, FacilityModel $facility)
     {
-        return $user->hasPermission('facilities.forceDelete');
+        return $user instanceof Admin && $user->hasPermission('facilities.forceDelete');
+    }
+
+    public function toggleStatus(Authenticatable $user, FacilityModel $facility)
+    {
+        return $user instanceof Admin && $user->hasPermission('facilities.manage_status');
     }
 }

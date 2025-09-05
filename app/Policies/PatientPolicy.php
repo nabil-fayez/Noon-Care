@@ -2,88 +2,89 @@
 
 namespace App\Policies;
 
-use App\Models\Patient;
+use App\Models\Admin;
+use App\Models\Patient as PatientModel;
+use App\Models\Doctor;
+use App\Models\Facility;
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 class PatientPolicy
 {
     use HandlesAuthorization;
 
-    /**
-     * Determine whether the user can view any patients.
-     */
-    public function viewAny($user): bool
+    public function viewAny(Authenticatable $user)
     {
-        // المسؤول فقط يمكنه عرض قائمة المرضى
-        return Auth::guard('admin')->check();
-    }
-
-    /**
-     * Determine whether the user can view the patient.
-     */
-    public function view($user, Patient $patient): bool
-    {
-        // المسؤول أو المريض نفسه يمكنه عرض البيانات
-        if (Auth::guard('admin')->check()) {
-            return true;
+        if ($user instanceof Admin) {
+            return $user->hasPermission('patients.view');
         }
 
-        if (Auth::guard('patient')->check()) {
-            return Auth::guard('patient')->id() == $patient->id;
-        }
-
-        return false;
+        return $user instanceof Doctor || $user instanceof Facility;
     }
 
-    /**
-     * Determine whether the user can create patients.
-     */
-    public function create($user): bool
+    public function view(Authenticatable $user, PatientModel $patient)
     {
-        // فقط المسؤول يمكنه إنشاء مرضى
-        return Auth::guard('admin')->check();
-    }
-
-    /**
-     * Determine whether the user can update the patient.
-     */
-    public function update($user, Patient $patient): bool
-    {
-        // المسؤول أو المريض نفسه يمكنه التعديل
-        if (Auth::guard('admin')->check()) {
-            return true;
+        if ($user instanceof Admin) {
+            return $user->hasPermission('patients.view');
         }
 
-        if (Auth::guard('patient')->check()) {
-            return Auth::guard('patient')->id() == $patient->id;
+        if ($user instanceof PatientModel) {
+            return $user->id === $patient->id;
+        }
+
+        if ($user instanceof Doctor) {
+            // يمكن للطبيب رؤية مرضاه
+            return $patient->appointments()->where('doctor_id', $user->id)->exists();
+        }
+
+        if ($user instanceof Facility) {
+            // يمكن للمنشأة رؤية المرضى المرتبطين بها
+            return $patient->appointments()->where('facility_id', $user->id)->exists();
         }
 
         return false;
     }
 
-    /**
-     * Determine whether the user can delete the patient.
-     */
-    public function delete($user, Patient $patient): bool
+    public function create(Authenticatable $user)
     {
-        // فقط المسؤول يمكنه الحذف
-        return Auth::guard('admin')->check();
+        if ($user instanceof Admin) {
+            return $user->hasPermission('patients.create');
+        }
+
+        // يسمح للمرضى بالتسجيل بأنفسهم
+        return $user instanceof PatientModel;
     }
 
-    /**
-     * Determine whether the user can restore the patient.
-     */
-    public function restore($user, Patient $patient): bool
+    public function update(Authenticatable $user, PatientModel $patient)
     {
-        return Auth::guard('admin')->check();
+        if ($user instanceof Admin) {
+            return $user->hasPermission('patients.update');
+        }
+
+        if ($user instanceof PatientModel) {
+            return $user->id === $patient->id;
+        }
+
+        return false;
     }
 
-    /**
-     * Determine whether the user can permanently delete the patient.
-     */
-    public function forceDelete($user, Patient $patient): bool
+    public function delete(Authenticatable $user, PatientModel $patient)
     {
-        return Auth::guard('admin')->check();
+        return $user instanceof Admin && $user->hasPermission('patients.delete');
+    }
+
+    public function restore(Authenticatable $user, PatientModel $patient)
+    {
+        return $user instanceof Admin && $user->hasPermission('patients.restore');
+    }
+
+    public function forceDelete(Authenticatable $user, PatientModel $patient)
+    {
+        return $user instanceof Admin && $user->hasPermission('patients.forceDelete');
+    }
+
+    public function toggleStatus(Authenticatable $user, PatientModel $patient)
+    {
+        return $user instanceof Admin && $user->hasPermission('patients.manage_status');
     }
 }

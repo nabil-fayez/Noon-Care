@@ -2,61 +2,125 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Models\Permission;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class PermissionController extends Controller
 {
+    /**
+     * عرض قائمة الصلاحيات
+     */
     public function index()
     {
-        $permissions = Permission::all();
-        return $this->respondWithSuccess($permissions);
+        $permissions = Permission::orderBy('module')->orderBy('permission_name')->get();
+        $groupedPermissions = $permissions->groupBy('module');
+
+        return view('admin.permissions.index', compact('groupedPermissions'));
     }
 
-    public function show($id)
+    /**
+     * عرض نموذج إنشاء صلاحية جديدة
+     */
+    public function create()
     {
-        $permission = Permission::find($id);
-        if (!$permission) {
-            return $this->respondWithError('Permission not found', 404);
-        }
-        return $this->respondWithSuccess($permission);
+        $modules = [
+            'doctors' => 'الأطباء',
+            'patients' => 'المرضى',
+            'facilities' => 'المنشآت',
+            'appointments' => 'المواعيد',
+            'medical_records' => 'السجلات الطبية',
+            'specialties' => 'التخصصات',
+            'error_logs' => 'سجلات الأخطاء',
+            'reports' => 'التقارير',
+            'settings' => 'الإعدادات',
+            'roles' => 'الأدوار',
+            'permissions' => 'الصلاحيات',
+        ];
+
+        return view('admin.permissions.create', compact('modules'));
     }
 
+    /**
+     * حفظ الصلاحية الجديدة
+     */
     public function store(Request $request)
     {
-        $this->validateRequest($request, [
-            'name' => 'required|string|max:255',
-            'guard_name' => 'required|string|max:255',
+        $request->validate([
+            'permission_name' => 'required|string|max:255|unique:permissions,permission_name',
+            'description' => 'nullable|string',
+            'module' => 'required|string|max:255'
         ]);
 
-        $permission = Permission::create($request->all());
-        return $this->respondWithSuccess($permission, 'Permission created successfully');
+        Permission::create($request->all());
+
+        return redirect()->route('admin.permissions.index')
+            ->with('success', 'تم إنشاء الصلاحية بنجاح.');
     }
 
-    public function update(Request $request, $id)
+    /**
+     * عرض تفاصيل الصلاحية
+     */
+    public function show(Permission $permission)
     {
-        $permission = Permission::find($id);
-        if (!$permission) {
-            return $this->respondWithError('Permission not found', 404);
-        }
+        $permission->load('roles.admins');
 
-        $this->validateRequest($request, [
-            'name' => 'sometimes|required|string|max:255',
-            'guard_name' => 'sometimes|required|string|max:255',
+        return view('admin.permissions.show', compact('permission'));
+    }
+
+    /**
+     * عرض نموذج تعديل الصلاحية
+     */
+    public function edit(Permission $permission)
+    {
+        $modules = [
+            'doctors' => 'الأطباء',
+            'patients' => 'المرضى',
+            'facilities' => 'المنشآت',
+            'appointments' => 'المواعيد',
+            'medical_records' => 'السجلات الطبية',
+            'specialties' => 'التخصصات',
+            'error_logs' => 'سجلات الأخطاء',
+            'reports' => 'التقارير',
+            'settings' => 'الإعدادات',
+            'roles' => 'الأدوار',
+            'permissions' => 'الصلاحيات',
+        ];
+
+        return view('admin.permissions.edit', compact('permission', 'modules'));
+    }
+
+    /**
+     * تحديث بيانات الصلاحية
+     */
+    public function update(Request $request, Permission $permission)
+    {
+        $request->validate([
+            'permission_name' => 'required|string|max:255|unique:permissions,permission_name,' . $permission->id,
+            'description' => 'nullable|string',
+            'module' => 'required|string|max:255'
         ]);
 
         $permission->update($request->all());
-        return $this->respondWithSuccess($permission, 'Permission updated successfully');
+
+        return redirect()->route('admin.permissions.index')
+            ->with('success', 'تم تحديث الصلاحية بنجاح.');
     }
 
-    public function destroy($id)
+    /**
+     * حذف الصلاحية
+     */
+    public function destroy(Permission $permission)
     {
-        $permission = Permission::find($id);
-        if (!$permission) {
-            return $this->respondWithError('Permission not found', 404);
+        // منع حذف الصلاحية إذا كانت مرتبطة بأدوار
+        if ($permission->roles()->count() > 0) {
+            return redirect()->back()
+                ->with('error', 'لا يمكن حذف الصلاحية لأنها مرتبطة بأدوار.');
         }
 
         $permission->delete();
-        return $this->respondWithSuccess(null, 'Permission deleted successfully');
+
+        return redirect()->route('admin.permissions.index')
+            ->with('success', 'تم حذف الصلاحية بنجاح.');
     }
 }

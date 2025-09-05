@@ -2,120 +2,82 @@
 
 namespace App\Policies;
 
+use App\Models\Admin;
 use App\Models\MedicalRecord;
+use App\Models\Patient;
+use App\Models\Doctor;
+use App\Models\Facility;
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 class MedicalRecordPolicy
 {
     use HandlesAuthorization;
 
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny($user): bool
+    public function viewAny(Authenticatable $user)
     {
-        return Auth::guard('admin')->check() ||
-            Auth::guard('doctor')->check() ||
-            Auth::guard('patient')->check();
+        if ($user instanceof Admin) {
+            return $user->hasPermission('medical_records.view');
+        }
+
+        return $user instanceof Patient || $user instanceof Doctor || $user instanceof Facility;
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view($user, MedicalRecord $medicalRecord): bool
+    public function view(Authenticatable $user, MedicalRecord $medicalRecord)
     {
-        // المسؤول يمكنه رؤية جميع السجلات
-        if (Auth::guard('admin')->check()) {
-            return true;
+        if ($user instanceof Admin) {
+            return $user->hasPermission('medical_records.view');
         }
 
-        // الطبيب يمكنه رؤية سجلاته فقط
-        if (Auth::guard('doctor')->check()) {
-            return Auth::guard('doctor')->id() == $medicalRecord->doctor_id;
+        if ($user instanceof Patient) {
+            return $user->id === $medicalRecord->patient_id;
         }
 
-        // المريض يمكنه رؤية سجلاته فقط
-        if (Auth::guard('patient')->check()) {
-            return Auth::guard('patient')->id() == $medicalRecord->patient_id;
+        if ($user instanceof Doctor) {
+            return $user->id === $medicalRecord->doctor_id;
+        }
+
+        if ($user instanceof Facility) {
+            return $user->id === $medicalRecord->facility_id;
         }
 
         return false;
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create($user): bool
+    public function create(Authenticatable $user)
     {
-        return Auth::guard('admin')->check() ||
-            Auth::guard('doctor')->check();
-    }
-
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update($user, MedicalRecord $medicalRecord): bool
-    {
-        // المسؤول يمكنه تعديل جميع السجلات
-        if (Auth::guard('admin')->check()) {
-            return true;
+        if ($user instanceof Admin) {
+            return $user->hasPermission('medical_records.create');
         }
 
-        // الطبيب يمكنه تعديل سجلاته فقط
-        if (Auth::guard('doctor')->check()) {
-            return Auth::guard('doctor')->id() == $medicalRecord->doctor_id;
+        return $user instanceof Doctor;
+    }
+
+    public function update(Authenticatable $user, MedicalRecord $medicalRecord)
+    {
+        if ($user instanceof Admin) {
+            return $user->hasPermission('medical_records.update');
+        }
+
+        if ($user instanceof Doctor) {
+            return $user->id === $medicalRecord->doctor_id;
         }
 
         return false;
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete($user, MedicalRecord $medicalRecord): bool
+    public function delete(Authenticatable $user, MedicalRecord $medicalRecord)
     {
-        // فقط المسؤول يمكنه الحذف
-        return Auth::guard('admin')->check();
+        return $user instanceof Admin && $user->hasPermission('medical_records.delete');
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore($user, MedicalRecord $medicalRecord): bool
+    public function restore(Authenticatable $user, MedicalRecord $medicalRecord)
     {
-        return Auth::guard('admin')->check();
+        return $user instanceof Admin && $user->hasPermission('medical_records.restore');
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete($user, MedicalRecord $medicalRecord): bool
+    public function forceDelete(Authenticatable $user, MedicalRecord $medicalRecord)
     {
-        return Auth::guard('admin')->check();
-    }
-
-    /**
-     * Determine whether the user can view patient records.
-     */
-    public function viewPatientRecords($user, $patientId): bool
-    {
-        // المسؤول يمكنه رؤية جميع السجلات
-        if (Auth::guard('admin')->check()) {
-            return true;
-        }
-
-        // الطبيب يمكنه رؤية سجلات مرضاه
-        if (Auth::guard('doctor')->check()) {
-            // هنا يمكن إضافة منطق للتحقق إذا كان الطبيب يعالج هذا المريض
-            return true;
-        }
-
-        // المريض يمكنه رؤية سجلاته فقط
-        if (Auth::guard('patient')->check()) {
-            return Auth::guard('patient')->id() == $patientId;
-        }
-
-        return false;
+        return $user instanceof Admin && $user->hasPermission('medical_records.forceDelete');
     }
 }

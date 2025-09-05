@@ -29,6 +29,7 @@ class DoctorController extends Controller
     public function index(Request $request)
     {
         try {
+            $this->authorize('viewAny', request()->user());
             $perPage = $request->get('per_page', 10);
             $doctors = $this->doctorService->getDoctors($request->all(), $perPage);
 
@@ -96,6 +97,8 @@ class DoctorController extends Controller
     public function show(Request $request, Doctor $doctor)
     {
         try {
+            $this->authorize('view', $doctor);
+
             $doctor->load(['specialties', 'facilities', 'appointments', 'reviews']);
 
             $allSpecialties = Specialty::all();

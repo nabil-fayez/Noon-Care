@@ -5,6 +5,8 @@
 @section('content')
     <div class="container">
         <div class="row justify-content-center">
+            @include('admin.partials.sidebar')
+
             <div class="col-md-10">
                 <!-- أزرار التنقل -->
                 <div class="d-flex justify-content-between align-items-center mb-4">

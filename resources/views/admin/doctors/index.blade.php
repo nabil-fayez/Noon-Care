@@ -121,7 +121,7 @@
                         </div>
 
                         <!-- التصفح -->
-                        <div class="d-flex justify-content-center mt-4">
+                        <div class="pagination d-flex justify-content-center mt-4">
                             {{ $doctors->links() }}
                         </div>
                     </div>

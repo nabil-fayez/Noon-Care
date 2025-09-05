@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('url')->nullable();
             $table->string('ip')->nullable();
             $table->string('user_agent')->nullable();
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('user_id')->nullable();
             $table->timestamps();
         });
     }

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class DoctorFacility extends Model
 {
-protected $table = 'doctor_facility';
+    use HasFactory;
+
+    protected $table = 'doctor_facility';
 
     protected $fillable = [
         'doctor_id',

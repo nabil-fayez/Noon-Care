@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Appointment;
 use App\Models\Doctor;
+use App\Models\Facility;
 use App\Models\Patient;
 use App\Models\Specialty;
 use Carbon\Carbon;
@@ -48,12 +49,18 @@ class AdminController extends Controller
         $stats = [
             'doctors' => Doctor::count(),
             'patients' => Patient::count(),
-            'today_appointments' => Appointment::where('created_at', '=', Date::today())->count(),
+            'facilities' => Facility::count(),
             'total_appointments' => Appointment::count(),
+            'today_appointments' => Appointment::where('created_at', '=', Date::today())->count(),
+            'total_new_appointments' => Appointment::where('status', '=', 'new')->count(),
+            'total_confirmed_appointments' => Appointment::where('status', '=', 'confirmed')->count(),
+            'total_cancelled_appointments' => Appointment::where('status', '=', 'cancelled')->count(),
+            'total_done_appointments' => Appointment::where('status', '=', 'done')->count(),
             'revenue' => 0
         ];
         $recentAppointments = Appointment::latest()->take(10)->get();
-        return view('admin.dashboard', ['stats' => $stats, 'recentAppointments' => $recentAppointments]);
+        $recentDoctors = Doctor::latest()->take(5)->get();
+        return view('admin.dashboard', ['stats' => $stats, 'recentAppointments' => $recentAppointments, 'recentDoctors' => $recentDoctors]);
     }
     public function index()
     {

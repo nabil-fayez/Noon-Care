@@ -1,0 +1,27 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\Admin;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
+
+class AdminFactory extends Factory
+{
+    protected $model = Admin::class;
+
+    public function definition()
+    {
+        return [
+            'name' => $this->faker->name,
+            'email' => $this->faker->unique()->safeEmail,
+            'password' => Hash::make('password'),
+            'role_id' => function () {
+                return \App\Models\Role::factory()->create()->id;
+            },
+            'is_active' => $this->faker->boolean(90),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+    }
+}

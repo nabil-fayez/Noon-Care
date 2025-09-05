@@ -13,6 +13,8 @@ return new class extends Migration
             $table->string('permission_name', 100)->unique();
             $table->string('display_name', 100)->nullable();
             $table->text('description')->nullable();
+            $table->string('module', 100)->nullable();
+            $table->boolean('is_default')->default(false);
             $table->timestamps();
         });
     }

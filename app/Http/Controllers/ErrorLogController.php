@@ -11,6 +11,7 @@ class ErrorLogController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('view');
         $errorLogs = ErrorLog::with('user')
             ->when($request->has('search'), function ($query) use ($request) {
                 return $query->search($request->search);
