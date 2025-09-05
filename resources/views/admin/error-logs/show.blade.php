@@ -15,14 +15,16 @@
                             <i class="bi bi-arrow-left"></i> العودة إلى سجلات الأخطاء
                         </a>
                     </div>
-                    <h4 class="mb-0 text-{{ $errorLog->level == 'critical' ? 'danger' : ($errorLog->level == 'error' ? 'warning' : 'info') }}">
+                    <h4
+                        class="mb-0 text-{{ ($errorLog->level == 'critical' ? 'danger' : $errorLog->level == 'error') ? 'warning' : 'info' }}">
                         <i class="bi bi-bug"></i> تفاصيل سجل الخطأ
                     </h4>
                 </div>
 
                 <!-- بطاقة تفاصيل الخطأ -->
                 <div class="card">
-                    <div class="card-header bg-{{ $errorLog->level == 'critical' ? 'danger' : ($errorLog->level == 'error' ? 'warning' : 'info') }} text-white">
+                    <div
+                        class="card-header bg-{{ $errorLog->level == 'critical' ? 'danger' : ($errorLog->level == 'error' ? 'warning' : 'info') }} text-white">
                         <h5 class="mb-0">معلومات الخطأ</h5>
                     </div>
                     <div class="card-body">
@@ -30,7 +32,8 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <strong>مستوى الخطأ:</strong><br>
-                                    <span class="badge bg-{{ $errorLog->level == 'critical' ? 'danger' : ($errorLog->level == 'error' ? 'warning' : ($errorLog->level == 'warning' ? 'info' : 'secondary') }}">
+                                    <span
+                                        class="badge bg-{{ (($errorLog->level == 'critical' ? 'danger' : $errorLog->level == 'error') ? 'warning' : $errorLog->level == 'warning') ? 'info' : 'secondary' }}">
                                         {{ $errorLog->level }}
                                     </span>
                                 </div>
@@ -47,23 +50,24 @@
 
                         <div class="mb-3">
                             <strong>الرسالة:</strong><br>
-                            <div class="alert alert-{{ $errorLog->level == 'critical' ? 'danger' : ($errorLog->level == 'error' ? 'warning' : 'info') }}">
+                            <div
+                                class="alert alert-{{ $errorLog->level == 'critical' ? 'danger' : ($errorLog->level == 'error' ? 'warning' : 'info') }}">
                                 {{ $errorLog->message }}
                             </div>
                         </div>
 
-                        @if($errorLog->file)
-                        <div class="mb-3">
-                            <strong>الملف:</strong><br>
-                            <code>{{ $errorLog->file }}{{ $errorLog->line ? ':' . $errorLog->line : '' }}</code>
-                        </div>
+                        @if ($errorLog->file)
+                            <div class="mb-3">
+                                <strong>الملف:</strong><br>
+                                <code>{{ $errorLog->file }}{{ $errorLog->line ? ':' . $errorLog->line : '' }}</code>
+                            </div>
                         @endif
 
-                        @if($errorLog->url)
-                        <div class="mb-3">
-                            <strong>الرابط:</strong><br>
-                            <a href="{{ $errorLog->url }}" target="_blank">{{ $errorLog->url }}</a>
-                        </div>
+                        @if ($errorLog->url)
+                            <div class="mb-3">
+                                <strong>الرابط:</strong><br>
+                                <a href="{{ $errorLog->url }}" target="_blank">{{ $errorLog->url }}</a>
+                            </div>
                         @endif
 
                         <div class="row mb-4">
@@ -81,29 +85,29 @@
                             </div>
                         </div>
 
-                        @if($errorLog->user)
-                        <div class="mb-3">
-                            <strong>المستخدم:</strong><br>
-                            <div class="d-flex align-items-center">
-                                <img src="{{ $errorLog->user->profile_image_url ?? 'https://via.placeholder.com/40' }}"
-                                     class="rounded-circle me-2" width="40" height="40" alt="صورة المستخدم">
-                                <div>
-                                    <strong>{{ $errorLog->user->name }}</strong><br>
-                                    <small class="text-muted">{{ $errorLog->user->email }}</small>
+                        @if ($errorLog->user)
+                            <div class="mb-3">
+                                <strong>المستخدم:</strong><br>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ $errorLog->user->profile_image_url_url }}"
+                                        class="rounded-circle me-2" width="40" height="40" alt="صورة المستخدم">
+                                    <div>
+                                        <strong>{{ $errorLog->user->name }}</strong><br>
+                                        <small class="text-muted">{{ $errorLog->user->email }}</small>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         @endif
 
-                        @if($errorLog->details && is_array($errorLog->details))
-                        <div class="mb-3">
-                            <strong>التفاصيل الإضافية:</strong><br>
-                            <div class="card">
-                                <div class="card-body">
-                                    <pre class="mb-0">{{ json_encode($errorLog->details, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                        @if ($errorLog->details && is_array($errorLog->details))
+                            <div class="mb-3">
+                                <strong>التفاصيل الإضافية:</strong><br>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <pre class="mb-0">{{ json_encode($errorLog->details, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         @endif
                     </div>
                 </div>
@@ -115,7 +119,7 @@
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger"
-                                    onclick="return confirm('هل أنت متأكد من حذف سجل الخطأ هذا؟')">
+                                onclick="return confirm('هل أنت متأكد من حذف سجل الخطأ هذا؟')">
                                 <i class="bi bi-trash"></i> حذف سجل الخطأ
                             </button>
                         </form>

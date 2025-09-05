@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'نظام حجز المواعيد الطبية')
+@section('title', 'Noon-Care')
 
 @section('content')
     <!-- قسم الهيرو -->
@@ -18,7 +18,7 @@
                     </div>
                 </div>
                 <div class="col-md-6 text-center">
-                    <img src="{{ asset('images/medical-team.svg') }}" alt="فريق طبي" class="img-fluid"
+                    <img src="{{ asset('storage/images/medical_team.png') }}" alt="فريق طبي" class="img-fluid"
                         style="max-height: 400px;">
                 </div>
             </div>
@@ -89,31 +89,6 @@
                 <div class="col-md-3 col-6 text-center mb-4">
                     <h2 class="fw-bold text-primary">10,000+</h2>
                     <p class="text-muted">موعد تم حجزه</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- قسم التطبيق -->
-    <section class="py-5">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <h2 class="fw-bold mb-4">حمّل تطبيقنا الآن</h2>
-                    <p class="lead mb-4">احصل على تجربة أفضل من خلال تطبيقنا المخصص للهواتف الذكية. احجز مواعيدك، تابع سجلك
-                        الطبي، واستشر الأطباء من أي مكان.</p>
-                    <div class="d-flex">
-                        <a href="#" class="me-3">
-                            <img src="{{ asset('images/google-play-badge.png') }}" alt="Google Play" style="height: 60px;">
-                        </a>
-                        <a href="#">
-                            <img src="{{ asset('images/app-store-badge.png') }}" alt="App Store" style="height: 60px;">
-                        </a>
-                    </div>
-                </div>
-                <div class="col-md-6 text-center">
-                    <img src="{{ asset('images/mobile-app.png') }}" alt="تطبيق Noon Care" class="img-fluid"
-                        style="max-height: 400px;">
                 </div>
             </div>
         </div>

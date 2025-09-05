@@ -8,6 +8,7 @@ use App\Models\Doctor;
 use App\Models\Service;
 use App\Services\ErrorLogService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -284,5 +285,199 @@ class FacilityController extends Controller
             ->paginate(10);
 
         return view('admin.facilities.appointments', compact('facility', 'appointments'));
+    }
+
+    /**
+     * عرض صفحة إضافة خدمة للمنشأة
+     */
+    public function addService(Facility $facility)
+    {
+        $this->authorize('update', $facility);
+
+        // جلب الخدمات التي لم يتم إضافتها بعد للمنشأة
+        $existingServiceIds = $facility->services()->pluck('services.id')->toArray();
+        $services = Service::whereNotIn('id', $existingServiceIds)->get();
+
+        return view('admin.facilities.add-service', compact('facility', 'services'));
+    }
+
+    /**
+     * معالجة إضافة خدمة للمنشأة
+     */
+    public function storeService(Request $request, Facility $facility)
+    {
+        $this->authorize('update', $facility);
+
+        $validated = $request->validate([
+            'service_id' => 'required|exists:services,id',
+            'price' => 'required|numeric|min:0',
+            'duration' => 'required|integer|min:5',
+            'is_available' => 'sometimes|boolean'
+        ]);
+
+        // التحقق إذا كانت الخدمة مضافة مسبقاً
+        if ($facility->services()->where('service_id', $validated['service_id'])->exists()) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'هذه الخدمة مضافه مسبقاً للمنشأة');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // إضافة الخدمة للمنشأة
+            $facility->services()->attach($validated['service_id'], [
+                'duration' => $validated['duration'],
+                'is_available' => $validated['is_available'] ?? true,
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('admin.facility.services', $facility)
+                ->with('success', 'تم إضافة الخدمة بنجاح');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء إضافة الخدمة: ' . $e->getMessage());
+        }
+    }
+
+
+    /**
+     * إزالة خدمة من المنشأة
+     */
+    public function removeService(Facility $facility, Service $service)
+    {
+        $this->authorize('update', $facility);
+
+        try {
+            DB::beginTransaction();
+
+            $facility->services()->detach($service->id);
+
+            DB::commit();
+
+            return redirect()->back()
+                ->with('success', 'تم إزالة الخدمة بنجاح');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()
+                ->with('error', 'حدث خطأ أثناء إزالة الخدمة: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * تحديث خدمة في المنشأة
+     */
+    public function updateService(Request $request, Facility $facility, Service $service)
+    {
+        $this->authorize('update', $facility);
+
+        $validated = $request->validate([
+            'price' => 'required|numeric|min:0',
+            'duration' => 'required|integer|min:5',
+            'is_available' => 'sometimes|boolean'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $facility->services()->updateExistingPivot($service->id, [
+                'price' => $validated['price'],
+                'duration' => $validated['duration'],
+                'is_available' => $validated['is_available'] ?? true,
+            ]);
+
+            DB::commit();
+
+            return redirect()->back()
+                ->with('success', 'تم تحديث الخدمة بنجاح');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()
+                ->with('error', 'حدث خطأ أثناء تحديث الخدمة: ' . $e->getMessage());
+        }
+    }
+
+    public function showAddDoctorForm(Facility $facility)
+    {
+        $this->authorize('update', $facility);
+
+        // جلب الأطباء غير المضافين لهذه المنشأة
+        $existingDoctorIds = $facility->doctors()->pluck('doctors.id')->toArray();
+        $availableDoctors = Doctor::whereNotIn('id', $existingDoctorIds)->get();
+
+        return view('admin.facilities.add-doctor', compact('facility', 'availableDoctors'));
+    }
+
+
+    /**
+     * معالجة إضافة طبيب للمنشأة
+     */
+    public function addDoctor(Request $request, Facility $facility)
+    {
+        $this->authorize('update', $facility);
+
+        $validated = $request->validate([
+            'doctor_id' => 'required|exists:doctors,id',
+            'status' => 'required|in:active,pending,inactive',
+            'available_for_appointments' => 'sometimes|boolean'
+        ]);
+
+        // التحقق إذا كان الطبيب مضافاً مسبقاً للمنشأة
+        if ($facility->doctors()->where('doctor_id', $validated['doctor_id'])->exists()) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'هذا الطبيب مضاف مسبقاً للمنشأة');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // إضافة الطبيب للمنشأة
+            $facility->doctors()->attach($validated['doctor_id'], [
+                'status' => $validated['status'],
+                'available_for_appointments' => $validated['available_for_appointments'] ?? false,
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('admin.facility.doctors', $facility)
+                ->with('success', 'تم إضافة الطبيب بنجاح');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء إضافة الطبيب: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * إزالة طبيب من المنشأة
+     */
+    public function removeDoctor(Request $request, Facility $facility, Doctor $doctor)
+    {
+        $this->authorize('update', $facility);
+
+        try {
+            DB::beginTransaction();
+
+            $facility->doctors()->detach($doctor->id);
+
+            DB::commit();
+
+            return redirect()->back()
+                ->with('success', 'تم إزالة الطبيب بنجاح');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()
+                ->with('error', 'حدث خطأ أثناء إزالة الطبيب: ' . $e->getMessage());
+        }
     }
 }

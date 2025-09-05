@@ -8,20 +8,7 @@
             @include('admin.partials.sidebar')
 
             <div class="col-md-10">
-                <!-- رسائل التنبيه -->
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle"></i> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
 
-                @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
 
                 <!-- أزرار التنقل -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -52,9 +39,9 @@
                             <div class="row">
                                 <!-- الصورة الحالية -->
                                 <div class="col-md-12 text-center mb-4">
-                                    @if ($patient->profile_image)
-                                        <img src="{{ $patient->profile_image }}" class="rounded-circle mb-3" width="150"
-                                            height="150" alt="صورة المريض الحالية">
+                                    @if ($patient->profile_image_url)
+                                        <img src="{{ $patient->profile_image_url }}" class="rounded-circle mb-3"
+                                            width="150" height="150" alt="صورة المريض الحالية">
                                         <br>
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="remove_image"
@@ -64,8 +51,8 @@
                                             </label>
                                         </div>
                                     @else
-                                        <img src="https://via.placeholder.com/150" class="rounded-circle mb-3"
-                                            width="150" height="150" alt="لا توجد صورة">
+                                        <img src="" class="rounded-circle mb-3" width="150" height="150"
+                                            alt="لا توجد صورة">
                                     @endif
                                 </div>
 

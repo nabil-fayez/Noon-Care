@@ -75,8 +75,8 @@
                                     @forelse($doctors as $doctor)
                                         <tr>
                                             <td>
-                                                <img src="{{ $doctor->profile_image ?? 'https://via.placeholder.com/50' }}"
-                                                    class="rounded-circle" width="50" height="50" alt="صورة الطبيب">
+                                                <img src="{{ $doctor->profile_image_url }}" class="rounded-circle"
+                                                    width="50" height="50" alt="صورة الطبيب">
                                             </td>
                                             <td>{{ $doctor->full_name }}</td>
                                             <td>{{ $doctor->email }}</td>

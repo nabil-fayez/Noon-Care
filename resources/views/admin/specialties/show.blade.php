@@ -8,14 +8,6 @@
             @include('admin.partials.sidebar')
 
             <div class="col-md-10">
-                <!-- رسائل التنبيه -->
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle"></i> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
-
                 <!-- أزرار التنقل -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
@@ -152,7 +144,7 @@
                                                 @foreach ($specialty->doctors as $doctor)
                                                     <tr>
                                                         <td>
-                                                            <img src="{{ $doctor->profile_image ?? 'https://via.placeholder.com/40' }}"
+                                                            <img src="{{ $doctor->profile_image_url }}"
                                                                 class="rounded-circle" width="40" height="40"
                                                                 alt="صورة الطبيب">
                                                         </td>

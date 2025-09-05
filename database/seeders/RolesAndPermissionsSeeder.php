@@ -28,6 +28,16 @@ class RolesAndPermissionsSeeder extends Seeder
                 ['permission_name' => 'admins.update', 'description' => 'تعديل مسؤول', 'module' => 'admins'],
                 ['permission_name' => 'admins.delete', 'description' => 'حذف مسؤول', 'module' => 'admins'],
 
+                ['permission_name' => 'roles.view', 'description' => 'عرض المسؤولين', 'module' => 'roles'],
+                ['permission_name' => 'roles.create', 'description' => 'إنشاء مسؤول', 'module' => 'roles'],
+                ['permission_name' => 'roles.update', 'description' => 'تعديل مسؤول', 'module' => 'roles'],
+                ['permission_name' => 'roles.delete', 'description' => 'حذف مسؤول', 'module' => 'roles'],
+
+                ['permission_name' => 'permissions.view', 'description' => 'عرض المسؤولين', 'module' => 'permissions'],
+                ['permission_name' => 'permissions.create', 'description' => 'إنشاء مسؤول', 'module' => 'permissions'],
+                ['permission_name' => 'permissions.update', 'description' => 'تعديل مسؤول', 'module' => 'permissions'],
+                ['permission_name' => 'permissions.delete', 'description' => 'حذف مسؤول', 'module' => 'permissions'],
+
                 ['permission_name' => 'doctors.view', 'description' => 'عرض الأطباء', 'module' => 'doctors'],
                 ['permission_name' => 'doctors.create', 'description' => 'إنشاء طبيب', 'module' => 'doctors'],
                 ['permission_name' => 'doctors.update', 'description' => 'تعديل طبيب', 'module' => 'doctors'],

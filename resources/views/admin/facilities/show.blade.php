@@ -8,20 +8,7 @@
             @include('admin.partials.sidebar')
 
             <div class="col-md-10">
-                <!-- رسائل التنبيه -->
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle"></i> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
 
-                @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
 
                 <!-- أزرار التنقل -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -59,7 +46,7 @@
                             <!-- الشعار والمعلومات الأساسية -->
                             <div class="col-md-4">
                                 <div class="text-center mb-4">
-                                    <img src="{{ $facility->logo_url ?? 'https://avatar.iran.liara.run/public/36' }}"
+                                    <img src="{{ $facility->logo_url }}"
                                         class="rounded mb-3" width="200" height="200" alt="شعار المنشأة">
                                     <h3>{{ $facility->business_name }}</h3>
                                     <p class="text-muted">{{ $facility->username }}</p>
@@ -237,9 +224,8 @@
                                         @foreach ($facility->doctors->take(5) as $doctor)
                                             <tr>
                                                 <td>
-                                                    <img src="{{ $doctor->profile_image ?? 'https://via.placeholder.com/40' }}"
-                                                        class="rounded-circle" width="40" height="40"
-                                                        alt="صورة الطبيب">
+                                                    <img src="{{ $doctor->profile_image_url }}" class="rounded-circle"
+                                                        width="40" height="40" alt="صورة الطبيب">
                                                 </td>
                                                 <td>{{ $doctor->full_name }}</td>
                                                 <td>

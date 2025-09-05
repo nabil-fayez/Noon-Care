@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'إدارة المنشآت الطبية - Noon Care')
+@section('title', 'إدارة المنشآت - Noon Care')
 
 @section('content')
     <div class="container-fluid">
@@ -8,64 +8,70 @@
             @include('admin.partials.sidebar')
 
             <div class="col-md-10">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-building"></i> قائمة المنشآت الطبية
-                            <span class="badge bg-primary">{{ $facilities->total() }}</span>
-                        </h5>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="mb-0">
+                        <i class="bi bi-building"></i> إدارة المنشآت
+                        <span class="badge bg-primary">{{ $facilities->total() }}</span>
+                    </h4>
+                    @if (request()->user()->hasPermission('facilities.create'))
                         <a href="{{ route('admin.facility.create') }}" class="btn btn-primary">
                             <i class="bi bi-plus-circle"></i> إضافة منشأة جديدة
                         </a>
-                    </div>
+                    @endif
+                </div>
 
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">قائمة المنشآت</h5>
+                    </div>
                     <div class="card-body">
-                        <!-- فلترة البحث -->
+                        <!-- شريط البحث والتصفية -->
                         <form method="GET" action="{{ route('admin.facilities.index') }}" class="mb-4">
                             <div class="row">
-                                <div class="col-md-4">
-                                    <input type="text" name="search" class="form-control"
-                                        placeholder="بحث بالاسم أو العنوان" value="{{ request('search') }}">
+                                <div class="col-md-8">
+                                    <div class="input-group">
+                                        <input type="text" name="search" class="form-control"
+                                            placeholder="ابحث باسم المنشأة أو البريد الإلكتروني..."
+                                            value="{{ request('search') }}">
+                                        <button class="btn btn-outline-secondary" type="submit">
+                                            <i class="bi bi-search"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="col-md-3">
-                                    <select name="status" class="form-select">
+                                <div class="col-md-4">
+                                    <select name="status" class="form-select" onchange="this.form.submit()">
                                         <option value="">جميع الحالات</option>
                                         <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>نشط
                                         </option>
-                                        <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>غير
-                                            نشط</option>
+                                        <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>
+                                            معطل</option>
                                     </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <button type="submit" class="btn btn-primary">بحث</button>
-                                    <a href="{{ route('admin.facilities.index') }}" class="btn btn-secondary">إعادة
-                                        تعيين</a>
                                 </div>
                             </div>
                         </form>
 
-                        <!-- جدول المنشآت -->
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-dark">
+                            <table class="table table-hover">
+                                <thead>
                                     <tr>
+                                        <th>#</th>
                                         <th>الشعار</th>
                                         <th>اسم المنشأة</th>
                                         <th>البريد الإلكتروني</th>
                                         <th>الهاتف</th>
-                                        <th>العنوان</th>
                                         <th>عدد الأطباء</th>
+                                        <th>عدد الخدمات</th>
                                         <th>الحالة</th>
-                                        <th>تاريخ التسجيل</th>
                                         <th>الإجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($facilities as $facility)
                                         <tr>
+                                            <td>{{ $loop->iteration }}</td>
                                             <td>
-                                                <img src="{{ $facility->logo_url ?? 'https://via.placeholder.com/50' }}"
-                                                    class="rounded" width="50" height="50" alt="شعار المنشأة">
+                                                <img src="{{ $facility->logo_url }}" class="rounded" width="50"
+                                                    height="50" alt="شعار المنشأة">
                                             </td>
                                             <td>
                                                 <strong>{{ $facility->business_name }}</strong>
@@ -74,17 +80,13 @@
                                             </td>
                                             <td>{{ $facility->email ?? 'غير متوفر' }}</td>
                                             <td>{{ $facility->phone ?? 'غير متوفر' }}</td>
-                                            <td>{{ Str::limit($facility->address, 30) ?? 'غير متوفر' }}</td>
+                                            <td>{{ $facility->doctors_count }}</td>
+                                            <td>{{ $facility->services_count }}</td>
                                             <td>
-                                                <span class="badge bg-info">{{ $facility->doctors_count }}</span>
-                                            </td>
-                                            <td>
-                                                <span
-                                                    class="badge bg-{{ $facility->is_active ? 'success' : 'secondary' }}">
-                                                    {{ $facility->is_active ? 'نشط' : 'غير نشط' }}
+                                                <span class="badge bg-{{ $facility->is_active ? 'success' : 'danger' }}">
+                                                    {{ $facility->is_active ? 'نشط' : 'معطل' }}
                                                 </span>
                                             </td>
-                                            <td>{{ $facility->created_at->format('Y-m-d') }}</td>
                                             <td>
                                                 <div class="btn-group" role="group">
                                                     <a href="{{ route('admin.facility.show', $facility) }}"
@@ -126,7 +128,6 @@
                                 </tbody>
                             </table>
                         </div>
-
                         <!-- التصفح -->
                         @if ($facilities->hasPages())
                             <div class="d-flex justify-content-between align-items-center mt-4">
@@ -145,16 +146,3 @@
         </div>
     </div>
 @endsection
-
-@push('styles')
-    <style>
-        .table-hover tbody tr:hover {
-            background-color: rgba(0, 0, 0, 0.075);
-            transition: background-color 0.2s ease;
-        }
-
-        .btn-group .btn {
-            margin: 0 2px;
-        }
-    </style>
-@endpush

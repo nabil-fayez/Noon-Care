@@ -45,7 +45,7 @@
                                         @foreach ($facilities as $facility)
                                             <tr>
                                                 <td>
-                                                    <img src="{{ $facility->logo_url ?? 'https://via.placeholder.com/50' }}"
+                                                    <img src="{{ $facility->logo_url }}"
                                                         class="rounded" width="50" height="50" alt="شعار المنشأة">
                                                 </td>
                                                 <td>

@@ -12,6 +12,10 @@
 </head>
 
 <body>
+    @stack('styles')
+    <script src="https://unpkg.com/htmx.org@1.9.6"
+        integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni" crossorigin="anonymous">
+    </script>
     <style>
         svg {
             width: 2rem;
@@ -26,26 +30,18 @@
         </header>
 
         <main>
-            {{-- في أعلى الملف --}}
+            <!-- رسائل التنبيه -->
             @if (session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <i class="bi bi-check-circle"></i> {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
             @if (session('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    {{ session('error') }}
-                    <br>
-                    <small>إذا كنت تعتقد أن هذا خطأ، يرجى الاتصال بمسؤول النظام.</small>
-                    <button id='testbtn' type="button" class="close btn btn-danger" data-dismiss="alert"
-                        aria-label="Close" onclick="this.parentElement.style.display='none'">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 

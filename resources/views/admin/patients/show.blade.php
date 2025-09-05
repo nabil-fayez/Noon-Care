@@ -8,20 +8,7 @@
             @include('admin.partials.sidebar')
 
             <div class="col-md-10">
-                <!-- رسائل التنبيه -->
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle"></i> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
 
-                @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
 
                 <!-- أزرار التنقل -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -58,7 +45,7 @@
                             <!-- الصورة والمعلومات الأساسية -->
                             <div class="col-md-4">
                                 <div class="text-center mb-4">
-                                    <img src="{{ $patient->profile_image ?? 'https://avatar.iran.liara.run/public/36' }}"
+                                    <img src="{{ $patient->profile_image_url }}"
                                         class="rounded-circle mb-3" width="200" height="200" alt="صورة المريض">
                                     <h3>{{ $patient->full_name }}</h3>
                                     <p class="text-muted">{{ $patient->username }}</p>
@@ -139,13 +126,14 @@
                                         <div class="row text-center">
                                             <div class="col-md-4">
                                                 <div class="border rounded p-3">
-                                                    <h4 class="text-primary">{{ $patient->appointments_count }}</h4>
+                                                    <h4 class="text-primary">{{ $patient->appointments->count() }}</h4>
                                                     <p class="mb-0">إجمالي المواعيد</p>
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="border rounded p-3">
-                                                    <h4 class="text-success">{{ $patient->completed_appointments_count }}
+                                                    <h4 class="text-success">
+                                                        {{ $patient->completed_appointments()->count() }}
                                                     </h4>
                                                     <p class="mb-0">مواعيد منتهية</p>
                                                 </div>
@@ -175,7 +163,8 @@
                                                 </a>
                                             </div>
                                             <div class="col-md-4">
-                                                <a href="#" class="btn btn-outline-info btn-block">
+                                                <a href="{{ route('admin.appointments.create') }}"
+                                                    class="btn btn-outline-info btn-block">
                                                     <i class="bi bi-calendar-plus fa-2x mb-2"></i>
                                                     <br>حجز موعد
                                                 </a>

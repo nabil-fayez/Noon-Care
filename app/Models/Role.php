@@ -1,13 +1,13 @@
 <?php
 
 namespace App\Models;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model
 {
-        use HasFactory;
+    use HasFactory;
 
     protected $table = 'roles';
 
@@ -16,6 +16,11 @@ class Role extends Model
     protected $fillable = [
         'role_name',
         'description',
+        'is_default',
+    ];
+
+    protected $casts = [
+        'is_default' => 'boolean',
     ];
 
     protected $dates = ['created_at', 'updated_at'];
@@ -27,7 +32,8 @@ class Role extends Model
 
     public function permissions()
     {
-        return $this->belongsToMany(Permission::class, 'role_permissions', 'role_id', 'permission_id');
+        return $this->belongsToMany(Permission::class, 'role_permissions', 'role_id', 'permission_id')
+            ->withTimestamps();
     }
 
     /**
@@ -67,19 +73,18 @@ class Role extends Model
      */
     public function syncPermissions(array $permissions)
     {
-        $permissionIds = [];
+        return $this->permissions()->sync($permissions);
+    }
 
-        foreach ($permissions as $permission) {
-            if (is_string($permission)) {
-                $permissionModel = Permission::where('permission_name', $permission)->first();
-                if ($permissionModel) {
-                    $permissionIds[] = $permissionModel->id;
-                }
-            } else {
-                $permissionIds[] = $permission;
-            }
+    /**
+     * التحقق إذا كان للدور صلاحية معينة
+     */
+    public function hasPermission($permission)
+    {
+        if (is_string($permission)) {
+            return $this->permissions->contains('permission_name', $permission);
         }
 
-        return $this->permissions()->sync($permissionIds);
+        return $this->permissions->contains('id', $permission->id);
     }
 }

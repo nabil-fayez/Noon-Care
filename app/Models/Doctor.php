@@ -97,10 +97,7 @@ class Doctor extends Model
         if (!$this->profile_image) {
             return null;
         }
-
-        return Storage::exists($this->profile_image)
-            ? Storage::url($this->profile_image)
-            : $this->profile_image;
+        return asset('storage/' . $this->profile_image);
     }
     /**
      * النطاقات (Scopes)

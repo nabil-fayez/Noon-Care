@@ -9,48 +9,58 @@ class AdminPolicy
 {
     use HandlesAuthorization;
 
-    public function viewAny(Admin $user)
+    public function viewAny(Admin $admin)
     {
-        return $user->hasPermission('admins.view');
+        return $admin->hasPermission('admins.view');
     }
 
-    public function view(Admin $user, Admin $admin)
+    public function view(Admin $admin, Admin $targetAdmin)
     {
-        return $user->hasPermission('admins.view');
+        return $admin->hasPermission('admins.view');
     }
 
-    public function create(Admin $user)
+    public function create(Admin $admin)
     {
-        return $user->hasPermission('admins.create');
+        return $admin->hasPermission('admins.create');
     }
 
-    public function update(Admin $user, Admin $admin)
+    public function update(Admin $admin, Admin $targetAdmin)
     {
-        return $user->hasPermission('admins.update');
+        // يمكن للمسؤول تعديل حسابه الخاص حتى لو لم يكن لديه الصلاحية
+        if ($admin->id === $targetAdmin->id) {
+            return true;
+        }
+
+        return $admin->hasPermission('admins.update');
     }
 
-    public function delete(Admin $user, Admin $admin)
+    public function delete(Admin $admin, Admin $targetAdmin)
     {
-        return $user->hasPermission('admins.delete');
+        // لا يمكن للمسؤول حذف حسابه الخاص
+        if ($admin->id === $targetAdmin->id) {
+            return false;
+        }
+
+        return $admin->hasPermission('admins.delete');
     }
 
-    public function restore(Admin $user, Admin $admin)
+    public function restore(Admin $admin, Admin $targetAdmin)
     {
-        return $user->hasPermission('admins.restore');
+        return $admin->hasPermission('admins.delete');
     }
 
-    public function forceDelete(Admin $user, Admin $admin)
+    public function forceDelete(Admin $admin, Admin $targetAdmin)
     {
-        return $user->hasPermission('admins.forceDelete');
+        return $admin->hasPermission('admins.delete');
     }
 
-    public function manageRoles(Admin $user)
+    public function toggleStatus(Admin $admin, Admin $targetAdmin)
     {
-        return $user->hasPermission('roles.manage');
-    }
+        // لا يمكن للمسؤول تعطيل حسابه الخاص
+        if ($admin->id === $targetAdmin->id) {
+            return false;
+        }
 
-    public function managePermissions(Admin $user)
-    {
-        return $user->hasPermission('permissions.manage');
+        return $admin->hasPermission('admins.update');
     }
 }

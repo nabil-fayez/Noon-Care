@@ -146,7 +146,7 @@
                                 <div class="card-body">
                                     @foreach ($recentDoctors as $doctor)
                                         <div class="d-flex align-items-center mb-3">
-                                            <img src="{{ $doctor->profile_image }}" class="rounded-circle me-3"
+                                            <img src="{{ $doctor->profile_image_url_url }}" class="rounded-circle me-3"
                                                 alt="طبيب">
                                             <div class="flex-grow-1">
                                                 <h6 class="mb-0">{{ $doctor->full_name }}</h6>

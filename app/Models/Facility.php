@@ -72,9 +72,7 @@ class Facility extends Authenticatable
      */
     public function services()
     {
-        return $this->belongsToMany(Service::class, 'facility_services')
-            ->withPivot('is_available')
-            ->withTimestamps();
+        return $this->belongsToMany(Service::class, 'facility_services');
     }
 
     /**

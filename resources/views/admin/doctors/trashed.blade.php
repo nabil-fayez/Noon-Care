@@ -21,19 +21,6 @@
                     </div>
 
                     <div class="card-body">
-                        @if (session('success'))
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                <i class="bi bi-check-circle"></i> {{ session('success') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        @endif
-
-                        @if (session('error'))
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        @endif
 
                         @if ($doctors->count() > 0)
                             <div class="table-responsive">
@@ -53,7 +40,7 @@
                                         @foreach ($doctors as $doctor)
                                             <tr>
                                                 <td>
-                                                    <img src="{{ $doctor->profile_image ?? 'https://via.placeholder.com/50' }}"
+                                                    <img src="{{ $doctorprofile_image_url }}"
                                                         class="rounded-circle" width="50" height="50"
                                                         alt="صورة الطبيب">
                                                 </td>

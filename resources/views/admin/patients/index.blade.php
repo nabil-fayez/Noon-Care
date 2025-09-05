@@ -72,7 +72,7 @@
                                     @forelse($patients as $patient)
                                         <tr>
                                             <td>
-                                                <img src="{{ $patient->profile_image ?? 'https://via.placeholder.com/50' }}"
+                                                <img src="{{ $patient->profile_image_url }}"
                                                     class="rounded-circle" width="50" height="50" alt="صورة المريض">
                                             </td>
                                             <td>

@@ -72,7 +72,7 @@
                                     </div>
                                     <div class="card-body">
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ $medicalRecord->doctor->profile_image ?? 'https://via.placeholder.com/50' }}"
+                                            <img src="{{ $medicalRecord->doctor->profile_image_url  }}"
                                                 class="rounded-circle me-3" width="50" height="50">
                                             <div>
                                                 <h6 class="mb-0">{{ $medicalRecord->doctor->full_name }}</h6>

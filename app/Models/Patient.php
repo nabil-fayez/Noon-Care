@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Patient extends Model
+class Patient extends Authenticatable
 {
     use HasFactory;
     protected $guard = 'patient';
@@ -124,9 +125,7 @@ class Patient extends Model
             return null;
         }
 
-        return Storage::exists($this->profile_image)
-            ? Storage::url($this->profile_image)
-            : $this->profile_image;
+        return asset('storage/' . $this->profile_image);
     }
 
     /**
@@ -176,5 +175,10 @@ class Patient extends Model
     public function getGaurdAttribute()
     {
         return 'patient';
+    }
+
+    public function completed_appointments()
+    {
+        return Appointment::where('status', '=', 'done',)->where('patient_id', '=', $this->id)->get();
     }
 }

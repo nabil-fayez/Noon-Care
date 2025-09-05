@@ -8,20 +8,7 @@
             @include('admin.partials.sidebar')
 
             <div class="col-md-10">
-                <!-- رسائل التنبيه -->
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle"></i> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
 
-                @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
 
                 <!-- أزرار التنقل -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -64,8 +51,8 @@
                                             </label>
                                         </div>
                                     @else
-                                        <img src="https://via.placeholder.com/150" class="rounded mb-3" width="150"
-                                            height="150" alt="لا يوجد شعار">
+                                        <img src="" class="rounded mb-3" width="150" height="150"
+                                            alt="لا يوجد شعار">
                                     @endif
                                 </div>
 
@@ -119,8 +106,7 @@
                                     <div class="mb-3">
                                         <label for="website" class="form-label">الموقع الإلكتروني</label>
                                         <input type="url" class="form-control @error('website') is-invalid @enderror"
-                                            id="website" name="website"
-                                            value="{{ old('website', $facility->website) }}">
+                                            id="website" name="website" value="{{ old('website', $facility->website) }}">
                                         @error('website')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror

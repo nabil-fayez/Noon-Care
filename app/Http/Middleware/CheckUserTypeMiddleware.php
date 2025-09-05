@@ -15,17 +15,17 @@ class CheckUserTypeMiddleware
     public function handle(Request $request, Closure $next, ...$types)
     {
         $user = Auth::user();
-        
+
         if (!$user) {
             $user = $this->getUserFromAnyGuard();
         }
-        
+
         if (!$user) {
             return $this->redirectToLoginWithIntendedUrl($request, $types);
         }
 
         $userType = $this->getUserType($user);
-        
+
         if (!in_array($userType, $types)) {
             abort(403, 'غير مصرح بالوصول');
         }
@@ -122,11 +122,11 @@ class CheckUserTypeMiddleware
     {
         $host = $request->getHost();
         $parts = explode('.', $host);
-        
+
         if (count($parts) > 2) {
             return $parts[0];
         }
-        
+
         return null;
     }
 
@@ -152,13 +152,13 @@ class CheckUserTypeMiddleware
     private function getUserFromAnyGuard()
     {
         $guards = array_keys(config('auth.guards'));
-        
+
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
                 return Auth::guard($guard)->user();
             }
         }
-        
+
         return null;
     }
 
@@ -170,7 +170,7 @@ class CheckUserTypeMiddleware
             \App\Models\Facility::class => 'facility',
             \App\Models\Admin::class => 'admin',
         ];
-        
+
         return $modelToTypeMap[get_class($user)] ?? 'unknown';
     }
 
@@ -182,7 +182,7 @@ class CheckUserTypeMiddleware
             'facility' => 'facility',
             'admin' => 'admin',
         ];
-        
+
         $userType = $this->getUserType($user);
         if (isset($typeToGuardMap[$userType])) {
             Auth::shouldUse($typeToGuardMap[$userType]);

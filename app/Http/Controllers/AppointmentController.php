@@ -26,6 +26,17 @@ class AppointmentController extends Controller
         $this->appointmentService = $appointmentService;
         $this->notificationService = $notificationService;
     }
+    public function patientIndex(Request $request)
+    {
+        $patient = auth()->guard('patient')->user();
+
+        $appointments = $patient->appointments()
+            ->with(['doctor', 'facility', 'service'])
+            ->orderBy('appointment_datetime', 'desc')
+            ->paginate(10);
+
+        return view('patient.appointments.index', compact('appointments'));
+    }
 
     /**
      * عرض قائمة الحجوزات
@@ -58,17 +69,16 @@ class AppointmentController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('create', Appointment::class)) {
-            abort(403, 'Unauthorized');
-        }
-
-        $patients = Patient::all();
-        $doctors = Doctor::all();
-        $facilities = Facility::all();
+        return view('admin.appointments.create');
+    }
+    public function patientCreate()
+    {
+        $doctors = Doctor::verified()->with('specialties')->get();
+        $facilities = Facility::active()->get();
         $services = Service::all();
         $insuranceCompanies = InsuranceCompany::all();
 
-        return view('admin.appointments.create', compact('patients', 'doctors', 'facilities', 'services', 'insuranceCompanies'));
+        return view('patient.appointments.create', compact('doctors', 'facilities', 'services', 'insuranceCompanies'));
     }
 
     /**
@@ -83,14 +93,15 @@ class AppointmentController extends Controller
         try {
             $validated = $this->validateAppointmentData($request);
 
-            // الحصول على doctor_facility_id
             $doctorFacility = DB::table('doctor_facility')
                 ->where('doctor_id', $validated['doctor_id'])
                 ->where('facility_id', $validated['facility_id'])
                 ->first();
 
+            dd('', $doctorFacility);
             if (!$doctorFacility) {
-                return back()->withErrors(['msg' => 'الطبيب غير متاح في هذه المنشأة'])->withInput();
+
+                return back()->withErrors('الطبيب غير متاح في هذه المنشأة')->withInput(['doctor_id', 'facility_id']);
             }
 
             $validated['doctor_facility_id'] = $doctorFacility->id;
@@ -117,6 +128,17 @@ class AppointmentController extends Controller
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء إنشاء الحجز: ' . $e->getMessage());
         }
+    }
+    public function patientShow(Appointment $appointment)
+    {
+        // التحقق من أن الموعد يخص المريض الحالي
+        if ($appointment->patient_id !== auth()->guard('patient')->user()->id) {
+            abort(403, 'غير مصرح لك بالوصول إلى هذا الموعد');
+        }
+
+        $appointment->load(['doctor', 'facility', 'service', 'insuranceCompany']);
+
+        return view('patient.appointments.show', compact('appointment'));
     }
 
     /**
@@ -187,7 +209,7 @@ class AppointmentController extends Controller
                 ->first();
 
             if (!$doctorFacility) {
-                return back()->withErrors(['msg' => 'الطبيب غير متاح في هذه المنشأة'])->withInput();
+                return back()->withErrors(['error' => 'الطبيب غير متاح في هذه المنشأة'])->withInput();
             }
 
             $validated['doctor_facility_id'] = $doctorFacility->id;
@@ -294,7 +316,49 @@ class AppointmentController extends Controller
             return redirect()->back()->with('error', 'حدث خطأ أثناء الحذف النهائي للحجز: ' . $e->getMessage());
         }
     }
+    public function patientCancel(Request $request, Appointment $appointment)
+    {
+        // التحقق من أن الموعد يخص المريض الحالي
+        if ($appointment->patient_id !== auth()->guard('patient')->user()->id) {
+            abort(403, 'غير مصرح لك بإلغاء هذا الموعد');
+        }
 
+        $request->validate([
+            'cancellation_reason' => 'required|string|max:500'
+        ]);
+
+        try {
+            $appointment->update([
+                'status' => 'cancelled',
+                'cancellation_reason' => $request->cancellation_reason
+            ]);
+
+            // إرسال إشعار للإدارة والطبيب
+            $this->notificationService->sendNotification(
+                $appointment->doctor_id,
+                'doctor',
+                'إلغاء موعد',
+                'تم إلغاء الموعد من قبل المريض: ' . $appointment->patient->full_name
+            );
+
+            $this->notificationService->sendNotification(
+                1, // افتراضيًا للمسؤول الأول
+                'admin',
+                'إلغاء موعد',
+                'تم إلغاء الموعد من قبل المريض: ' . $appointment->patient->full_name
+            );
+
+            return redirect()->route('patient.appointments.index')
+                ->with('success', 'تم إلغاء الموعد بنجاح');
+        } catch (\Exception $e) {
+            ErrorLogService::logErrorLevel(
+                "ظهر خطأ أثناء إلغاء الموعد: " . $e->getMessage(),
+                $e,
+                $request
+            );
+            return redirect()->back()->with('error', 'حدث خطأ أثناء إلغاء الموعد: ' . $e->getMessage());
+        }
+    }
     /**
      * تحديث حالة الحجز
      */
@@ -368,5 +432,252 @@ class AppointmentController extends Controller
         ];
 
         return $request->validate($rules);
+    }
+    /**
+     * البحث عن المرضى عبر api
+     */
+    public function apiPatients(Request $request)
+    {
+        $search = $request->get('search');
+
+        $patients = Patient::select('id', 'first_name', 'last_name', 'phone')
+            ->when($search, function ($query) use ($search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                });
+            })
+            ->paginate(10);
+
+        $formattedPatients = $patients->map(function ($patient) {
+            return [
+                'id' => $patient->id,
+                'text' => "{$patient->first_name} {$patient->last_name} - {$patient->phone}"
+            ];
+        });
+
+        return response()->json([
+            'data' => $formattedPatients,
+            'next_page_url' => $patients->nextPageUrl()
+        ]);
+    }
+
+    /**
+     * البحث عن الأطباء عبر api
+     */
+    public function apiDoctors(Request $request)
+    {
+        $search = $request->get('search');
+
+        $doctors = Doctor::select('id', 'first_name', 'last_name')
+            ->when($search, function ($query) use ($search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%");
+                });
+            })
+            ->paginate(10);
+
+        $formattedDoctors = $doctors->map(function ($doctor) {
+            return [
+                'id' => $doctor->id,
+                'text' => "{$doctor->first_name} {$doctor->last_name}"
+            ];
+        });
+
+        return response()->json([
+            'data' => $formattedDoctors,
+            'next_page_url' => $doctors->nextPageUrl()
+        ]);
+    }
+
+    /**
+     * البحث عن المنشآت عبر api
+     */
+    public function apiFacilities(Request $request)
+    {
+        $search = $request->get('search');
+
+        $facilities = Facility::select('id', 'business_name')
+            ->when($search, function ($query) use ($search) {
+                return $query->where('business_name', 'like', "%{$search}%");
+            })
+            ->paginate(10);
+
+        $formattedFacilities = $facilities->map(function ($facility) {
+            return [
+                'id' => $facility->id,
+                'text' => $facility->business_name
+            ];
+        });
+
+        return response()->json([
+            'data' => $formattedFacilities,
+            'next_page_url' => $facilities->nextPageUrl()
+        ]);
+    }
+
+    /**
+     * البحث عن الخدمات عبر api
+     */
+    public function apiServices(Request $request)
+    {
+        $search = $request->get('search');
+
+        $services = Service::select('id', 'name')
+            ->when($search, function ($query) use ($search) {
+                return $query->where('name', 'like', "%{$search}%");
+            })
+            ->paginate(10);
+
+        $formattedServices = $services->map(function ($service) {
+            return [
+                'id' => $service->id,
+                'text' => $service->name
+            ];
+        });
+
+        return response()->json([
+            'data' => $formattedServices,
+            'next_page_url' => $services->nextPageUrl()
+        ]);
+    }
+
+    /**
+     * البحث عن شركات التأمين عبر api
+     */
+    public function apiInsuranceCompanies(Request $request)
+    {
+        $search = $request->get('search');
+
+        $companies = InsuranceCompany::select('id', 'name')
+            ->when($search, function ($query) use ($search) {
+                return $query->where('name', 'like', "%{$search}%");
+            })
+            ->paginate(10);
+
+        $formattedCompanies = $companies->map(function ($company) {
+            return [
+                'id' => $company->id,
+                'text' => $company->name
+            ];
+        });
+
+        return response()->json([
+            'data' => $formattedCompanies,
+            'next_page_url' => $companies->nextPageUrl()
+        ]);
+    }
+
+    /**
+     * الحصول على الأوقات المتاحة للطبيب في منشأة معينة في تاريخ محدد
+     */
+    public function apiAvailableTimes(Request $request)
+    {
+        $doctorId = $request->get('doctor_id');
+        $facilityId = $request->get('facility_id');
+        $date = $request->get('date');
+
+        if (!$doctorId || !$facilityId || !$date) {
+            return response()->json(['available_times' => []]);
+        }
+
+        // الأوقات المتاحة من 8 صباحاً إلى 8 مساءاً بفاصل 30 دقيقة
+        $startTime = strtotime('08:00');
+        $endTime = strtotime('20:00');
+        $interval = 30 * 60; // 30 دقيقة بالثواني
+
+        $availableTimes = [];
+
+        for ($time = $startTime; $time <= $endTime; $time += $interval) {
+            $timeFormatted = date('H:i', $time);
+            $datetime = $date . ' ' . $timeFormatted;
+
+            // التحقق من وجود موعد في هذا الوقت
+            $isAvailable = !Appointment::where('doctor_id', $doctorId)
+                ->where('facility_id', $facilityId)
+                ->where('appointment_datetime', 'like', "%{$datetime}%")
+                ->whereNotIn('status', ['cancelled', 'done'])
+                ->exists();
+
+            $availableTimes[] = [
+                'time' => $timeFormatted,
+                'formatted_time' => date('h:i A', $time),
+                'is_available' => $isAvailable
+            ];
+        }
+
+        return response()->json(['available_times' => $availableTimes]);
+    }
+    /**
+     * البحث عن المرضى عبر HTMX
+     */
+    public function ajaxPatients(Request $request)
+    {
+        $search = $request->get('search');
+
+        $patients = Patient::select('id', 'first_name', 'last_name', 'phone')
+            ->when($search, function ($query) use ($search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                });
+            })
+            ->limit(10)
+            ->get();
+
+        $formattedPatients = $patients->map(function ($patient) {
+            return [
+                'id' => $patient->id,
+                'text' => "{$patient->first_name} {$patient->last_name} - {$patient->phone}"
+            ];
+        });
+
+        return response()->json($formattedPatients);
+    }
+
+    // كرر نفس النمط لباقي الدوال (doctors, facilities, services, insurance-companies)
+
+    /**
+     * الحصول على الأوقات المتاحة للطبيب في منشأة معينة في تاريخ محدد
+     */
+    public function ajaxAvailableTimes(Request $request)
+    {
+        $doctorId = $request->get('doctor_id');
+        $facilityId = $request->get('facility_id');
+        $date = $request->get('appointment_date');
+
+        if (!$doctorId || !$facilityId || !$date) {
+            return response()->json(['available_times' => []]);
+        }
+
+        // الأوقات المتاحة من 8 صباحاً إلى 8 مساءاً بفاصل 30 دقيقة
+        $startTime = strtotime('08:00');
+        $endTime = strtotime('20:00');
+        $interval = 30 * 60; // 30 دقيقة بالثواني
+
+        $availableTimes = [];
+
+        for ($time = $startTime; $time <= $endTime; $time += $interval) {
+            $timeFormatted = date('H:i', $time);
+            $datetime = $date . ' ' . $timeFormatted;
+
+            // التحقق من وجود موعد في هذا الوقت
+            $isAvailable = !Appointment::where('doctor_id', $doctorId)
+                ->where('facility_id', $facilityId)
+                ->where('appointment_datetime', 'like', "%{$datetime}%")
+                ->whereNotIn('status', ['cancelled', 'done'])
+                ->exists();
+
+            $availableTimes[] = [
+                'time' => $timeFormatted,
+                'formatted_time' => date('h:i A', $time),
+                'is_available' => $isAvailable
+            ];
+        }
+
+        return response()->json(['available_times' => $availableTimes]);
     }
 }

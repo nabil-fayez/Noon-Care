@@ -60,7 +60,7 @@
                         <!-- معلومات المنشأة -->
                         <div class="row mb-4">
                             <div class="col-md-4 text-center">
-                                <img src="{{ $facility->logo_url ?? 'https://via.placeholder.com/150' }}"
+                                <img src="{{ $facility->logo_url  }}"
                                     class="rounded mb-3" width="150" height="150" alt="شعار المنشأة">
                                 <h4>{{ $facility->business_name }}</h4>
                                 <p class="text-muted">{{ $facility->username }}</p>

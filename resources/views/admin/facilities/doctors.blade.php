@@ -18,7 +18,7 @@
                     <h4 class="mb-0">
                         <i class="bi bi-people"></i> أطباء المنشأة: {{ $facility->business_name }}
                     </h4>
-                    <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDoctorModal">
+                    <a href="{{ route('admin.facility.addDoctor', $facility->id) }}" class="btn btn-primary">
                         <i class="bi bi-plus-circle"></i> إضافة طبيب
                     </a>
                 </div>
@@ -48,14 +48,13 @@
                                         @foreach ($doctors as $doctor)
                                             <tr>
                                                 <td>
-                                                    <img src="{{ $doctor->profile_image_url ?? 'https://via.placeholder.com/50' }}"
-                                                        class="rounded-circle" width="50" height="50"
-                                                        alt="صورة الطبيب">
+                                                    <img src="{{ $doctor->profile_image_url_url }}" class="rounded-circle"
+                                                        width="50" height="50" alt="صورة الطبيب">
                                                 </td>
                                                 <td>
                                                     <strong>{{ $doctor->full_name }}</strong>
                                                     <br>
-                                                    <small class="text-muted">@{{ $doctor - > username }}</small>
+                                                    <small class="text-muted">{{ $doctor->username }}</small>
                                                 </td>
                                                 <td>
                                                     @foreach ($doctor->specialties->take(3) as $specialty)
@@ -118,63 +117,4 @@
             </div>
         </div>
     </div>
-
-    <!-- Modal لإضافة طبيب -->
-    <div class="modal fade" id="addDoctorModal" tabindex="-1" aria-labelledby="addDoctorModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addDoctorModalLabel">إضافة طبيب إلى المنشأة</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="{{ route('admin.facility.addDoctor', $facility) }}" method="POST">
-                    @csrf
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="doctor_id" class="form-label">اختر الطبيب</label>
-                            <select class="form-select" id="doctor_id" name="doctor_id" required>
-                                <option value="">اختر الطبيب</option>
-                                @foreach ($availableDoctors as $doctor)
-                                    <option value="{{ $doctor->id }}">{{ $doctor->full_name }} -
-                                        {{ $doctor->specialties->pluck('name')->implode(', ') }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="status" class="form-label">الحالة</label>
-                            <select class="form-select" id="status" name="status" required>
-                                <option value="active">نشط</option>
-                                <option value="pending">قيد الانتظار</option>
-                                <option value="inactive">غير نشط</option>
-                            </select>
-                        </div>
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="available_for_appointments"
-                                name="available_for_appointments" value="1" checked>
-                            <label class="form-check-label" for="available_for_appointments">
-                                متاح لحجز المواعيد
-                            </label>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                        <button type="submit" class="btn btn-primary">إضافة الطبيب</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 @endsection
-
-@push('scripts')
-    <script>
-        // تهيئة select2 لاختيار الطبيب
-        $(document).ready(function() {
-            $('#doctor_id').select2({
-                placeholder: "اختر الطبيب",
-                allowClear: true,
-                width: '100%'
-            });
-        });
-    </script>
-@endpush

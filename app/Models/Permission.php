@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Permission extends Model
 {
-        use HasFactory;
+    use HasFactory;
 
     protected $table = 'permissions';
 
@@ -21,8 +21,10 @@ class Permission extends Model
 
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'role_permissions', 'permission_id', 'role_id');
+        return $this->belongsToMany(Role::class, 'role_permissions', 'permission_id', 'role_id')
+            ->withTimestamps();
     }
+
 
     /**
      * الحصول على جميع الأدوار التي لها هذه الصلاحية

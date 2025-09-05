@@ -8,20 +8,6 @@
             @include('admin.partials.sidebar')
 
             <div class="col-md-10">
-                <!-- رسائل التنبيه -->
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle"></i> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
-
-                @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
 
                 <!-- أزرار التنقل -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -52,7 +38,7 @@
                             <!-- الصورة والمعلومات الأساسية -->
                             <div class="col-md-4">
                                 <div class="text-center mb-4">
-                                    <img src="{{ $doctor->profile_image ?? 'https://avatar.iran.liara.run/public/36' }}"
+                                    <img src="{{ $doctor->profile_image_url  }}"
                                         class="rounded-circle mb-3" width="200" height="200" alt="صورة الطبيب">
                                     <h3>{{ $doctor->full_name }}</h3>
                                     <p class="text-muted">{{ $doctor->username }}</p>
@@ -216,8 +202,7 @@
     </div>
 
     <!-- Modal لتعديل التخصصات -->
-    <div class="modal fade" id="specialtiesModal" tabindex="-1" aria-labelledby="specialtiesModalLabel"
-        aria-hidden="true">
+    <div class="modal fade" id="specialtiesModal" tabindex="-1" aria-labelledby="specialtiesModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">

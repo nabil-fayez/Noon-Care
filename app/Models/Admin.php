@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Admin extends Authenticatable
@@ -23,7 +22,17 @@ class Admin extends Authenticatable
         'is_active',
     ];
 
-    protected $dates = ['created_at', 'updated_at'];
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'email_verified_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
     public function role()
     {
@@ -49,16 +58,16 @@ class Admin extends Authenticatable
             return false;
         }
 
-        // استخدام eager loading لتحميل العلاقات
-        $adminWithPermissions = self::with(['role.permissions'])
-            ->where('id', $this->id)
-            ->first();
+        // تحميل العلاقات بدون استخدام eager loading لتجنب التكرار
+        if (!$this->relationLoaded('role') || !$this->role->relationLoaded('permissions')) {
+            $this->load(['role.permissions']);
+        }
 
-        if (!$adminWithPermissions->role) {
+        if (!$this->role) {
             return false;
         }
 
-        return $adminWithPermissions->role->permissions
+        return $this->role->permissions
             ->contains('permission_name', $permissionName);
     }
 
@@ -83,6 +92,35 @@ class Admin extends Authenticatable
             return collect();
         }
 
+        if (!$this->role->relationLoaded('permissions')) {
+            $this->role->load('permissions');
+        }
+
         return $this->role->permissions;
+    }
+
+    /**
+     * scope للبحث في المسؤولين
+     */
+    public function scopeSearch($query, $search)
+    {
+        return $query->where('name', 'like', "%{$search}%")
+            ->orWhere('email', 'like', "%{$search}%");
+    }
+
+    /**
+     * scope للمسؤولين النشطين
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * scope للمسؤولين المعطلين
+     */
+    public function scopeInactive($query)
+    {
+        return $query->where('is_active', false);
     }
 }

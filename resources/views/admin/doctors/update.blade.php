@@ -8,20 +8,7 @@
             @include('admin.partials.sidebar')
 
             <div class="col-md-10">
-                <!-- رسائل التنبيه -->
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle"></i> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
 
-                @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
 
                 <!-- أزرار التنقل -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -52,9 +39,9 @@
                             <div class="row">
                                 <!-- الصورة الحالية -->
                                 <div class="col-md-12 text-center mb-4">
-                                    @if ($doctor->profile_image)
-                                        <img src="{{ $doctor->profile_image }}" class="rounded-circle mb-3" width="150"
-                                            height="150" alt="صورة الطبيب الحالية">
+                                    @if ($doctor->profile_image_url)
+                                        <img src="{{ $doctor->profile_image_url }}" class="rounded-circle mb-3"
+                                            width="150" height="150" alt="صورة الطبيب الحالية">
                                         <br>
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="remove_image"
@@ -64,8 +51,8 @@
                                             </label>
                                         </div>
                                     @else
-                                        <img src="https://via.placeholder.com/150" class="rounded-circle mb-3"
-                                            width="150" height="150" alt="لا توجد صورة">
+                                        <img src="" class="rounded-circle mb-3" width="150" height="150"
+                                            alt="لا توجد صورة">
                                     @endif
                                 </div>
 
@@ -159,25 +146,28 @@
                             <!-- بداية التعديل على قسم التخصصات -->
                             <div class="mb-4">
                                 <label class="form-label">التخصصات <span class="text-danger">*</span></label>
-                                
+
                                 <!-- حقل البحث -->
                                 <div class="mb-3">
-                                    <input type="text" id="specialty-search" class="form-control" placeholder="ابحث عن تخصص...">
+                                    <input type="text" id="specialty-search" class="form-control"
+                                        placeholder="ابحث عن تخصص...">
                                 </div>
-                                
+
                                 <!-- مربع التخصصات -->
-                                <div class="specialties-container border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                <div class="specialties-container border rounded p-3"
+                                    style="max-height: 200px; overflow-y: auto;">
                                     <div class="row">
                                         @foreach ($specialties as $specialty)
                                             <div class="col-md-4 mb-2 specialty-item">
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" 
-                                                           name="specializations[]" 
-                                                           value="{{ $specialty->id }}"
-                                                           id="specialty-{{ $specialty->id }}"
-                                                           {{ in_array($specialty->id, old('specializations', $selectedSpecialties ?? [])) ? 'checked' : '' }}>
-                                                    <label class="form-check-label d-flex align-items-center" for="specialty-{{ $specialty->id }}">
-                                                        <span class="color-badge me-2" style="background-color: {{ $specialty->color }}"></span>
+                                                    <input class="form-check-input" type="checkbox"
+                                                        name="specializations[]" value="{{ $specialty->id }}"
+                                                        id="specialty-{{ $specialty->id }}"
+                                                        {{ in_array($specialty->id, old('specializations', $selectedSpecialties ?? [])) ? 'checked' : '' }}>
+                                                    <label class="form-check-label d-flex align-items-center"
+                                                        for="specialty-{{ $specialty->id }}">
+                                                        <span class="color-badge me-2"
+                                                            style="background-color: {{ $specialty->color }}"></span>
                                                         {{ $specialty->name }}
                                                     </label>
                                                 </div>
@@ -185,7 +175,7 @@
                                         @endforeach
                                     </div>
                                 </div>
-                                
+
                                 @error('specializations')
                                     <div class="text-danger mt-2">{{ $message }}</div>
                                 @enderror
@@ -254,7 +244,7 @@
         .card {
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         }
-        
+
         .color-badge {
             display: inline-block;
             width: 12px;
@@ -262,11 +252,11 @@
             border-radius: 50%;
             vertical-align: middle;
         }
-        
+
         .specialty-item {
             transition: all 0.3s ease;
         }
-        
+
         .specialty-item.hidden {
             display: none;
         }
@@ -312,18 +302,24 @@
         });
 
         // وظيفة البحث في التخصصات
-        document.getElementById('specialty-search').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const specialtyItems = document.querySelectorAll('.specialty-item');
-            
-            specialtyItems.forEach(item => {
-                const label = item.querySelector('.form-check-label').textContent.toLowerCase();
-                if (label.includes(searchTerm)) {
-                    item.classList.remove('hidden');
-                } else {
-                    item.classList.add('hidden');
-                }
-            });
-        });
+        document.getElementById('specialty-search').addEventListener('input',
+            function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const specialtyItems = document.querySelectorAll('.specialty-item');
+
+                specialtyItems.forEach(item => {
+                    const label = item.querySelector('.form-check-label').textContent.toLowerCase();
+                    if (label.includes(searchTerm)) {
+                        item.style.display = 'inline';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+        );
+
+        function specialtySearch() {
+
+        }
     </script>
 @endpush

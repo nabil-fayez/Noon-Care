@@ -79,4 +79,14 @@ class FacilityPolicy
     {
         return $user instanceof Admin && $user->hasPermission('facilities.manage_status');
     }
+
+    public function viewServices(Admin $admin, FacilityModel $facility)
+    {
+        return $admin->hasPermission('facilities.view');
+    }
+
+    public function manageServices(Admin $admin, FacilityModel $facility)
+    {
+        return $admin->hasPermission('facilities.update');
+    }
 }

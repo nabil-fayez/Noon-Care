@@ -8,7 +8,7 @@
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body text-center">
-                        <img src="{{ $facility->logo ? Storage::url($facility->logo) : 'https://avatar.iran.liara.run/public/36' }}"
+                        <img src="{{ $facility->logo ? Storage::url($facility->logo) : '' }}"
                             class="rounded mb-3" width="200" height="200">
                         <h3>{{ $facility->business_name }}</h3>
                         <p class="text-muted">{{ $facility->address }}</p>
@@ -62,7 +62,7 @@
                                         <div class="card h-100">
                                             <div class="card-body">
                                                 <div class="d-flex align-items-center">
-                                                    <img src="{{ $doctor->profile_image ? Storage::url($doctor->profile_image) : 'https://via.placeholder.com/60' }}"
+                                                    <img src="{{ $doctor->profile_image_url ? Storage::url($doctor->profile_image_url) : '' }}"
                                                         class="rounded-circle me-3" width="60" height="60">
                                                     <div>
                                                         <h5 class="mb-1">{{ $doctor->name }}</h5>

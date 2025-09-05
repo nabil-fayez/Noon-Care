@@ -45,7 +45,7 @@ class Specialty extends Model
     public function scopeSearch($query, $searchTerm)
     {
         return $query->where('name', 'like', "%$searchTerm%")
-                    ->orWhere('description', 'like', "%$searchTerm%");
+            ->orWhere('description', 'like', "%$searchTerm%");
     }
 
     /**
@@ -56,12 +56,9 @@ class Specialty extends Model
         if (!$this->icon) {
             return null;
         }
-        
-        return Storage::exists($this->icon) 
-            ? Storage::url($this->icon) 
-            : $this->icon;
-    }
 
+        return asset('storage/' . $this->icon);
+    }
     /**
      * السمات المحسوبة - عدد الأطباء
      */

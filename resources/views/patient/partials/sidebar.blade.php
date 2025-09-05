@@ -1,6 +1,6 @@
 <div class="card mb-3">
     <div class="card-body text-center">
-        <img src="{{ auth()->guard('patient')->user()->profile_image ?? 'https://via.placeholder.com/100' }}"
+        <img src="{{ auth()->guard('patient')->user()->profile_image_url  }}"
             class="rounded-circle mb-3" width="100" height="100">
         <h5>{{ auth()->guard('patient')->user()->full_name }}</h5>
         <p class="text-muted">مريض</p>

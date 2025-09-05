@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\Permission;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 
 class RoleController extends Controller
 {
@@ -37,23 +38,37 @@ class RoleController extends Controller
         $request->validate([
             'role_name' => 'required|string|max:255|unique:roles,role_name',
             'description' => 'nullable|string',
-            'permissions' => 'nullable|array',
+            'is_default' => 'sometimes|boolean',
+            'permissions' => 'required|array|min:1',
             'permissions.*' => 'exists:permissions,id'
         ]);
 
-        $role = Role::create([
-            'role_name' => $request->role_name,
-            'description' => $request->description,
-            'is_default' => $request->has('is_default'),
-        ]);
+        try {
+            DB::beginTransaction();
 
-        if ($request->has('permissions')) {
-            $role->syncPermissions($request->permissions);
+            $role = Role::create([
+                'role_name' => $request->role_name,
+                'description' => $request->description,
+                'is_default' => $request->has('is_default'),
+            ]);
+
+            // ربط الصلاحيات مع الدور
+            $role->permissions()->sync($request->permissions);
+
+            DB::commit();
+
+            return redirect()->route('admin.roles.index')
+                ->with('success', 'تم إنشاء الدور بنجاح.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء إنشاء الدور: ' . $e->getMessage());
         }
-
-        return redirect()->route('admin.roles.index')
-            ->with('success', 'تم إنشاء الدور بنجاح.');
     }
+
+
 
     /**
      * عرض تفاصيل الدور
@@ -86,23 +101,37 @@ class RoleController extends Controller
         $request->validate([
             'role_name' => 'required|string|max:255|unique:roles,role_name,' . $role->id,
             'description' => 'nullable|string',
-            'permissions' => 'nullable|array',
+            'is_default' => 'sometimes|boolean',
+            'permissions' => 'required|array|min:1',
             'permissions.*' => 'exists:permissions,id'
         ]);
 
-        $role->update([
-            'role_name' => $request->role_name,
-            'description' => $request->description,
-            'is_default' => $request->has('is_default'),
-        ]);
+        try {
+            DB::beginTransaction();
 
-        if ($request->has('permissions')) {
-            $role->syncPermissions($request->permissions);
+            $role->update([
+                'role_name' => $request->role_name,
+                'description' => $request->description,
+                'is_default' => $request->has('is_default'),
+            ]);
+
+            // مزامنة الصلاحيات مع الدور
+            $role->permissions()->sync($request->permissions);
+
+            DB::commit();
+
+            return redirect()->route('admin.roles.index')
+                ->with('success', 'تم تحديث الدور بنجاح.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء تحديث الدور: ' . $e->getMessage());
         }
-
-        return redirect()->route('admin.roles.index')
-            ->with('success', 'تم تحديث الدور بنجاح.');
     }
+
+
 
     /**
      * حذف الدور

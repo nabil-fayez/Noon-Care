@@ -16,7 +16,6 @@ class CheckPermission
         }
 
         $admin = Auth::guard('admin')->user();
-
         // التحقق من الصلاحية
         if (!$admin->hasPermission($permission)) {
             // إعادة توجيه إلى dashboard مع رسالة تنبيه
